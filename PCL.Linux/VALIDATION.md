@@ -1,5 +1,10 @@
 # PCL-CE-Linux 1.0.0 验证记录
 
+发布产物：`PCL-CE-Linux-1.0.0-x86_64.AppImage`，72,514,040 字节（69.2 MiB），
+SHA256 `b3757f4e8671b6fa1afb40b85e5b4873ccd97abe555b23d392e5225ca833baf9`。
+GitHub Release：<https://github.com/qfys521/PCL-CE/releases/tag/v1.0.0-linux>
+界面截图：`docs/linux/`（启动页浅色/深色/2x、数据清理、系统诊断、桌面集成）。
+
 本文件记录 1.0.0 AppImage 的构建与验证环境、命令和结果。验证日期为 2026-11-22，构建机为 Ubuntu 26.10（glibc 2.41，16 核），运行会话为 GNOME Wayland + XWayland、NVIDIA RTX 4060 Laptop。
 
 ## 构建与静态验证

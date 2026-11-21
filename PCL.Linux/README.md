@@ -26,6 +26,14 @@ WPF 本身仍只适用于 Windows；Linux 界面是原有设计的原生实现�
 
 “设置 → 个性化 → 启用界面动画”可即时开关动画，点击“应用”保存偏好。
 
+## 界面预览
+
+| 启动页（浅色） | 设置 / 数据清理 | 系统诊断 |
+| --- | --- | --- |
+| ![启动页](../docs/linux/launch-light.png) | ![数据清理](../docs/linux/data-wipe.png) | ![系统诊断](../docs/linux/system-diagnostics.png) |
+
+深色主题、2x HiDPI 与桌面集成页面截图见 [`docs/linux/`](../docs/linux)。
+
 ## 运行（AppImage）
 
 ```sh
