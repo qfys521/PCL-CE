@@ -7,13 +7,19 @@
         <LangVersion>15.0</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Version>0.2.1</Version>
-        <Description>PCL CE native Linux preview</Description>
+        <Version>1.0.0</Version>
+        <AssemblyTitle>PCL-CE-Linux</AssemblyTitle>
+        <Product>PCL-CE-Linux</Product>
+        <Company>PCL Community / PCL-CE-Linux contributors</Company>
+        <Description>PCL CE 的 Linux 原生版本</Description>
         <ApplicationIcon>../Plain Craft Launcher 2/Images/icon.ico</ApplicationIcon>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Avalonia.Desktop" Version="11.3.23" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.23" />
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
         <ProjectReference Include="../PCL.Launcher.Core/PCL.Launcher.Core.csproj" />
         <EmbeddedResource Include="../Plain Craft Launcher 2/metadata.json" LogicalName="PCL.metadata.json" />
         <Content Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
