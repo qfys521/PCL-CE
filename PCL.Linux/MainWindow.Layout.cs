@@ -31,6 +31,12 @@ internal sealed partial class MainWindow
     private readonly TextBox _homepage = new() { Watermark = "本地 Custom.xaml 或主页 JSON 文件" };
     private readonly TextBox _background = new() { Watermark = "背景图片路径（留空使用原版背景）" };
     private readonly TextBox _accent = new();
+    private readonly ComboBox _downloadSource = new()
+    {
+        ItemsSource = new[] { "自动（官方优先，失败时回退镜像）", "仅官方源", "仅镜像（BMCLAPI）" },
+        HorizontalAlignment = HorizontalAlignment.Stretch
+    };
+    private readonly TextBox _interfaceFont = new() { Watermark = "留空跟随系统字体" };
     private readonly ComboBox _theme = new() { ItemsSource = new[] { "跟随系统", "浅色", "深色" }, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly CheckBox _showAllVersions = new() { Content = "显示快照、远古版和测试版" };
     private readonly ComboBox _loaderKind = new() { ItemsSource = Enum.GetValues<LoaderKind>(), SelectedIndex = 0, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -62,17 +68,22 @@ internal sealed partial class MainWindow
 
     private void InitializeLayout()
     {
-        Title = "Plain Craft Launcher Community Edition";
-        Width = 1000; Height = 640; MinWidth = 850; MinHeight = 500;
-        SystemDecorations = SystemDecorations.None;
+        Title = "PCL-CE-Linux";
+        MinWidth = 850; MinHeight = 500;
+        // Linux 适配：使用系统窗口装饰（X11/Wayland 下由 WM/合成器提供的标题栏与边框），
+        // 不再绘制 Windows 风格的标题栏三键；应用内保留 PCL 的顶部导航条。
+        SystemDecorations = SystemDecorations.Full;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
+        TransparencyLevelHint = [];
         Background = Brushes.Transparent;
+        Icon = LoadWindowIcon();
         InitializeMotion();
         _jvmArguments.Text = _settings.JvmArguments; _gameArguments.Text = _settings.GameArguments;
         _curseKey.Text = _settings.CurseForgeKey; _homepage.Text = _settings.HomepagePath;
         _background.Text = _settings.BackgroundPath; _accent.Text = _settings.AccentColor;
         _theme.SelectedIndex = _settings.Theme switch { "light" => 1, "dark" => 2, _ => 0 };
+        _downloadSource.SelectedIndex = _settings.DownloadSource switch { "official" => 1, "mirror" => 2, _ => 0 };
+        _interfaceFont.Text = _settings.InterfaceFont;
         _relays.Text = _settings.RelayNodes;
         _authlibServer.Text = _settings.AuthlibServer; _authlibUsername.Text = _settings.AuthlibUsername;
         _authlib.IsChecked = _settings.UseAuthlibAccount;
@@ -89,24 +100,15 @@ internal sealed partial class MainWindow
         brand.Children.Add(new Border { Background = Brushes.White, CornerRadius = new CornerRadius(4), Padding = new Thickness(3, 0), Child = new TextBlock { Text = "CE", FontSize = 11, Foreground = new SolidColorBrush(Color.TryParse(_settings.AccentColor, out var savedAccent) ? savedAccent : Color.Parse("#147AD6")), FontWeight = FontWeight.SemiBold } });
         header.Children.Add(brand);
         var navigation = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        foreach (var (id, label) in new[] { ("launch", "▶  启动"), ("download", "↓  下载"), ("settings", "⚙  设置"), ("more", "⋯  更多") })
+        foreach (var (id, label) in new[] { ("launch", "启动"), ("download", "下载"), ("settings", "设置"), ("more", "更多") })
         {
             var button = NavigationButton(label, () => Navigate(id), "nav"); _tabs[id] = button; navigation.Children.Add(button);
         }
         var navigationHost = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         navigationHost.Children.Add(_tabIndicator); navigationHost.Children.Add(navigation);
         Grid.SetColumn(navigationHost, 1); header.Children.Add(navigationHost);
-        var windowButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
-        windowButtons.Children.Add(NavigationButton("—", () => WindowState = WindowState.Minimized, "nav"));
-        var close = NavigationButton("×", Close, "nav"); close.Classes.Add("close"); windowButtons.Children.Add(close);
-        Grid.SetColumn(windowButtons, 2); header.Children.Add(windowButtons);
+        header.ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto");
         _titleBar.Child = header;
-        _titleBar.PointerPressed += (_, e) =>
-        {
-            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || e.Source is Visual source && source.GetVisualAncestors().OfType<Button>().Any()) return;
-            if (e.ClickCount == 2) WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-            else BeginMoveDrag(e);
-        };
         root.Children.Add(_titleBar);
         _form.ColumnDefinitions = new ColumnDefinitions("300,*");
         _left.Bind(Border.BackgroundProperty, this.GetResourceObservable("PclSidebar"));
@@ -115,20 +117,27 @@ internal sealed partial class MainWindow
         Grid.SetColumn(_right, 1); _form.Children.Add(_right);
         _bodyBackground.Child = _form;
         Grid.SetRow(_bodyBackground, 1); root.Children.Add(_bodyBackground);
-        var footer = new Grid { ColumnDefinitions = new ColumnDefinitions("*,70,Auto,14"), Margin = new Thickness(18, 0, 7, 0) };
+        var footer = new Grid { ColumnDefinitions = new ColumnDefinitions("*,70,Auto"), Margin = new Thickness(18, 0, 18, 0) };
         _status.FontSize = 11; _status.Classes.Add("muted"); footer.Children.Add(_status);
         _cancel.Classes.Add("pcl"); _cancel.Padding = new Thickness(10, 2); _cancel.FontSize = 11;
         _activity.Bind(ProgressBar.ForegroundProperty, this.GetResourceObservable("PclAccent"));
         Grid.SetColumn(_activity, 1); footer.Children.Add(_activity);
         Grid.SetColumn(_cancel, 2); footer.Children.Add(_cancel);
-        var resize = new TextBlock { Text = "◢", Foreground = Brushes.Gray, FontSize = 12, VerticalAlignment = VerticalAlignment.Bottom, Cursor = new Cursor(StandardCursorType.BottomRightCorner) };
-        resize.PointerPressed += (_, e) => BeginResizeDrag(WindowEdge.SouthEast, e);
-        Grid.SetColumn(resize, 3); footer.Children.Add(resize);
         Grid.SetRow(footer, 2); root.Children.Add(footer);
         _windowFrame.Child = root; _windowFrame.ClipToBounds = true;
         _windowFrame.Bind(Border.BackgroundProperty, this.GetResourceObservable("PclPage"));
         Content = _windowFrame;
         ApplyAppearance();
+        ApplyInterfaceFont();
+        try
+        {
+            if (Application.Current?.PlatformSettings is { } platform)
+                platform.ColorValuesChanged += (_, _) => Dispatcher.UIThread.Post(() =>
+                {
+                    if (_settings.Theme is "system" or "") ApplyAppearance();
+                });
+        }
+        catch (Exception ex) { AppendLog("无法监听系统主题：" + ex.Message); }
         Navigate("launch");
     }
 
@@ -155,6 +164,9 @@ internal sealed partial class MainWindow
                 "version-settings" => (Menu("version-settings"), VersionSettingsPage()),
                 "mods" => (Menu("mods"), ModsPage()),
                 "settings" => (Menu("settings"), SettingsPage()),
+                "wipe" => (Menu("wipe"), DataWipePage()),
+                "linux" => (Menu("linux"), LinuxIntegrationPage()),
+                "diagnostics" => (Menu("diagnostics"), DiagnosticsPage()),
                 "appearance" => (Menu("appearance"), AppearancePage()),
                 "services" => (Menu("services"), ServicesPage()),
                 "lobby" => (Menu("lobby"), LobbyPage()),
@@ -166,7 +178,7 @@ internal sealed partial class MainWindow
         }
         SelectSidebar(page);
         QueuePageChange(content);
-        var tab = page switch { "download" or "catalog" or "packs" => "download", "settings" or "appearance" or "services" => "settings", "launch" or "instances" or "mods" or "version-settings" => "launch", _ => "more" };
+        var tab = page switch { "download" or "catalog" or "packs" => "download", "settings" or "appearance" or "services" or "wipe" or "linux" => "settings", "launch" or "instances" or "mods" or "version-settings" => "launch", _ => "more" };
         foreach (var pair in _tabs) pair.Value.Classes.Set("selected", pair.Key == tab);
         Dispatcher.UIThread.Post(UpdateTabIndicator, DispatcherPriority.Loaded);
         if (!_smoke && page == "mods" && _operation is null) _ = RunAsync(RefreshModsAsync);
@@ -178,17 +190,17 @@ internal sealed partial class MainWindow
         var group = active switch
         {
             "download" or "catalog" or "packs" => "download",
-            "settings" or "appearance" or "services" => "settings",
+            "settings" or "appearance" or "services" or "wipe" or "linux" => "settings",
             "instances" or "mods" or "version-settings" => "instances", _ => "more"
         };
         if (_menus.TryGetValue(group, out var existing)) return existing.Root;
         var menu = new StackPanel { Margin = new Thickness(0, 18, 0, 0), Spacing = 4 };
         var items = group switch
         {
-            "download" => new[] { ("download", "↓  游戏下载"), ("catalog", "⌕  模组与资源"), ("packs", "▣  整合包导入 / 导出") },
-            "settings" => new[] { ("settings", "⚙  启动选项"), ("appearance", "◈  个性化"), ("services", "◎  账号与服务") },
-            "instances" => new[] { ("launch", "‹  返回启动"), ("instances", "▣  版本管理"), ("version-settings", "⚙  版本设置"), ("mods", "◇  模组管理") },
-            _ => new[] { ("more", "ⓘ  关于与帮助"), ("lobby", "♧  联机大厅"), ("logs", "≡  运行日志") }
+            "download" => new[] { ("download", "游戏下载"), ("catalog", "模组与资源"), ("packs", "整合包导入 / 导出") },
+            "settings" => new[] { ("settings", "启动选项"), ("appearance", "个性化"), ("services", "账号与服务"), ("linux", "桌面集成"), ("wipe", "清理数据") },
+            "instances" => new[] { ("launch", "返回启动"), ("instances", "版本管理"), ("version-settings", "版本设置"), ("mods", "模组管理") },
+            _ => new[] { ("more", "关于与帮助"), ("diagnostics", "系统信息"), ("lobby", "联机大厅"), ("logs", "运行日志") }
         };
         var buttons = new Dictionary<string, Button>();
         foreach (var (id, label) in items)
@@ -296,10 +308,11 @@ internal sealed partial class MainWindow
 
     private Control SettingsPage() => CardPage("启动选项",
         Row("游戏目录", _directory, Button("浏览", BrowseDirectoryAsync)), Row("Java", _java, Button("选择", BrowseJavaAsync), Button("检测", DetectJavaAsync)),
-        Row("内存 (MiB)", _memory), Row("JVM 参数", _jvmArguments), Row("游戏参数", _gameArguments),
+        Row("内存 (MiB)", _memory), Row("下载源", _downloadSource), Row("JVM 参数", _jvmArguments), Row("游戏参数", _gameArguments),
+        Paragraph("下载源“自动”会优先使用 Mojang 官方地址，网络不可达时回退到 BMCLAPI 公开镜像；Minecraft 下载在中国大陆不受功能限制。"),
         Actions(Button("保存设置", _ => { SaveSettings(); RefreshInstalled(); return Task.CompletedTask; }), Button("下载当前版本所需 Java", DownloadJavaAsync)));
 
-    private Control AppearancePage() => CardPage("个性化", Row("主题", _theme), Row("主题颜色", _accent),
+    private Control AppearancePage() => CardPage("个性化", Row("主题", _theme), Row("主题颜色", _accent), Row("界面字体", _interfaceFont),
         Row("背景图片", _background, Button("选择", BrowseBackgroundAsync)), Row("自定义主页", _homepage, Button("选择", BrowseHomepageAsync)),
         _animations, Paragraph("支持原 Windows 主页中的常用 MyCard、MyButton、MyHint、StackPanel、Grid 和文本控件，也支持主页 JSON。"),
         Actions(Button("应用", _ => { SaveSettings(); ApplyAppearance(); RefreshHomepage(); return Task.CompletedTask; })));
@@ -317,9 +330,10 @@ internal sealed partial class MainWindow
         Actions(Button("创建大厅", CreateLobbyAsync), Button("加入大厅", JoinLobbyAsync), Button("离开大厅", LeaveLobbyAsync), Button("复制编号", CopyRoomAsync)), _roomPlayers,
         Paragraph("房主先在 Minecraft 中开放局域网，再填写游戏显示的端口。加入者可在游戏的局域网列表或显示的本地地址进入。"));
 
-    private Control AboutPage() => CardPage("PCL Community Edition", Paragraph("基于 PCL 社区版的 Linux 原生移植。界面沿用 Windows 版的顶部导航、账号区、启动按钮、卡片与主题设计。"),
-        Actions(NavigationButton("项目仓库", () => OpenUrl("https://github.com/PCL-Community/PCL-CE"), "pcl"), NavigationButton("运行日志", () => Navigate("logs"), "pcl")),
-        Paragraph("PCL 作者：龙腾猫跃；社区版由 PCL Community 开发与维护。许可文件随发布包提供。"));
+    private Control AboutPage() => CardPage("PCL-CE-Linux", Paragraph($"PCL 社区版的 Linux 原生移植，版本 {Program.VersionText}。界面沿用 Windows 版的顶部导航、账号区、启动按钮、卡片与主题设计，窗口使用系统提供的装饰。"),
+        Actions(NavigationButton("项目仓库", () => OpenUrl("https://github.com/qfys521/PCL-CE"), "pcl"), NavigationButton("上游项目", () => OpenUrl("https://github.com/PCL-Community/PCL-CE"), "pcl"), NavigationButton("运行日志", () => Navigate("logs"), "pcl")),
+        Paragraph("PCL 作者：龙腾猫跃；社区版由 PCL Community 开发与维护；Linux 版由 PCL-CE-Linux 贡献者维护。许可文件随发布包提供。"),
+        Paragraph("应用数据严格遵循 XDG 目录规范：配置在 ~/.config/pcl-ce，数据与 Java 运行时在 ~/.local/share/pcl-ce，缓存在 ~/.cache/pcl-ce，日志在 ~/.local/state/pcl-ce，游戏目录默认 ~/PCL-CE。"));
 
     private static StackPanel PageStack() => new() { Margin = new Thickness(25, 25, 25, 10), Spacing = 0 };
     private static ScrollViewer Scroll(Control content) => new() { Content = content, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -358,6 +372,10 @@ internal sealed partial class MainWindow
         if (!Color.TryParse(_accent.Text, out var color)) throw new ArgumentException("主题颜色无效，请输入 #147AD6 这样的颜色值。");
         _settings.AccentColor = color.ToString();
         _settings.Theme = _theme.SelectedIndex switch { 1 => "light", 2 => "dark", _ => "system" };
+        _settings.DownloadSource = _downloadSource.SelectedIndex switch { 1 => "official", 2 => "mirror", _ => "auto" };
+        DownloadPolicy.SourceOverride = _settings.DownloadSource;
+        _settings.InterfaceFont = (_interfaceFont.Text ?? "").Trim();
+        if (_linuxSettingsControlsReady) SaveLinuxIntegrationSettings();
         _settings.RelayNodes = _relays.Text ?? "";
         _settings.UseAuthlibAccount = _authlib.IsChecked == true;
         _settings.AuthlibServer = _authlibServer.Text ?? ""; _settings.AuthlibUsername = _authlibUsername.Text ?? "";
@@ -391,5 +409,6 @@ internal sealed partial class MainWindow
             _bodyBackground.Background = new ImageBrush(_backgroundBitmap) { Stretch = Stretch.UniformToFill };
         }
         else _bodyBackground.Background = null;
+        ApplyInterfaceFont();
     }
 }

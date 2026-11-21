@@ -39,8 +39,17 @@ public static class LinuxPaths
     public static string CacheHome => Path.Combine(XdgDirectory("XDG_CACHE_HOME", ".cache"), AppId);
     public static string StateHome => Path.Combine(XdgDirectory("XDG_STATE_HOME", ".local/state"), AppId);
 
-    /// <summary>运行时目录。XDG_RUNTIME_DIR 未设置时（理论上仅非桌面会话）退回到缓存目录，保证不写入 /tmp。</summary>
-    public static string RuntimeHome => Path.Combine(RuntimeRoot(), AppId);
+    /// <summary>运行时目录。XDG_RUNTIME_DIR 未设置时（理论上仅非桌面会话）退回到 $XDG_CACHE_HOME/pcl-ce/run，保证不写入 /tmp。</summary>
+    public static string RuntimeHome
+    {
+        get
+        {
+            var value = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");
+            if (!string.IsNullOrWhiteSpace(value) && Path.IsPathFullyQualified(value) && Directory.Exists(value))
+                return Path.Combine(Path.GetFullPath(value), AppId);
+            return Path.Combine(XdgDirectory("XDG_CACHE_HOME", ".cache"), AppId, "run");
+        }
+    }
 
     /// <summary>默认游戏目录 ~/PCL-CE。</summary>
     public static string DefaultGameDirectory => Path.Combine(Home, GameDirectoryName);
@@ -224,14 +233,6 @@ public static class LinuxPaths
         var value = Environment.GetEnvironmentVariable(variable);
         if (!string.IsNullOrWhiteSpace(value) && Path.IsPathFullyQualified(value)) return Path.GetFullPath(value);
         return Path.Combine(Home, fallbackRelativeToHome);
-    }
-
-    private static string RuntimeRoot()
-    {
-        var value = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");
-        if (!string.IsNullOrWhiteSpace(value) && Path.IsPathFullyQualified(value) && Directory.Exists(value)) return Path.GetFullPath(value);
-        // 没有运行时目录时退回到缓存目录，绝不写入 /tmp。
-        return Path.Combine(XdgDirectory("XDG_CACHE_HOME", ".cache"), AppId, "run");
     }
 
     /// <summary>当前进程是否运行在 Wayland 会话（通过 XWayland 使用 X11 协议）。</summary>

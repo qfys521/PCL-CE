@@ -36,10 +36,12 @@ internal sealed partial class MainWindow : Window
     private CancellationTokenSource? _gameOperation;
     private bool _closeAfterGame;
     private readonly bool _smoke;
+    private readonly string? _screenshotDirectory;
 
-    public MainWindow(bool smoke)
+    public MainWindow(bool smoke, string? screenshotDirectory = null)
     {
         _smoke = smoke;
+        _screenshotDirectory = screenshotDirectory;
         try { _settings = LinuxSettings.Load(); }
         catch (Exception ex) { _settings = new(); AppendLog($"读取设置失败：{ex.Message}"); }
         _directory.Text = _settings.GameDirectory;
@@ -49,6 +51,8 @@ internal sealed partial class MainWindow : Window
         _clientId.Text = string.IsNullOrWhiteSpace(_settings.MicrosoftClientId)
             ? Environment.GetEnvironmentVariable("PCL_MS_CLIENT_ID") ?? "" : _settings.MicrosoftClientId;
         _microsoft.IsChecked = _settings.UseMicrosoftAccount;
+        Width = _settings.WindowWidth is >= 850 and <= 10000 ? _settings.WindowWidth : 1000;
+        Height = _settings.WindowHeight is >= 500 and <= 10000 ? _settings.WindowHeight : 640;
         InitializeLayout();
         RefreshAccount();
         _installed.SelectionChanged += (_, _) => UpdateSelectedVersion();
@@ -65,10 +69,20 @@ internal sealed partial class MainWindow : Window
                 e.Cancel = true; _closeAfterGame = true; _gameOperation.Cancel();
                 _status.Text = "正在停止游戏…";
             }
-            else if (!smoke)
+            else if (!smoke && !SkipSettingsSaveOnClose)
             {
-                try { SaveSettings(); }
+                try { SaveGeometry(); SaveSettings(); }
                 catch (Exception ex) { e.Cancel = true; AppendLog($"保存设置失败：{ex.Message}"); }
+            }
+        };
+        Opened += (_, _) =>
+        {
+            if (_settings.WindowMaximized) WindowState = WindowState.Maximized;
+            if (!smoke && _screenshotDirectory is null) _ = RunStartupDiagnosticsAsync();
+            if (!smoke && _screenshotDirectory is null && _settings.WindowX != int.MinValue && _settings.WindowY != int.MinValue)
+            {
+                var point = new PixelPoint(_settings.WindowX, _settings.WindowY);
+                if (Screens.All.Any(screen => screen.Bounds.Contains(point))) Position = point;
             }
         };
         Closed += (_, _) =>
@@ -107,7 +121,12 @@ internal sealed partial class MainWindow : Window
         _operation = operation; _form.IsEnabled = false; _cancel.IsEnabled = true; _cancel.IsVisible = true; _activity.IsVisible = true;
         try { await action(operation.Token); _status.Text = _gameOperation is not null ? "游戏正在运行" : "完成"; }
         catch (OperationCanceledException) { _status.Text = "已取消"; AppendLog("操作已取消。"); }
-        catch (Exception ex) { _status.Text = "操作失败，详情见日志"; AppendLog(ex.Message); }
+        catch (Exception ex)
+        {
+            _status.Text = "操作失败，详情见日志";
+            AppendLog(ex.Message);
+            if (!IsActive) Notify("PCL-CE-Linux 操作失败", ex.Message, error: true);
+        }
         finally
         {
             _operation = null; _form.IsEnabled = true; _activity.IsVisible = false;
@@ -122,6 +141,7 @@ internal sealed partial class MainWindow : Window
         if (text.Length > 50000) text = text[^30000..];
         _log.Text = text + $"[{DateTime.Now:HH:mm:ss}] {message}\n";
         _log.CaretIndex = _log.Text.Length;
+        AppLog.Info(message);
     }
 
     private IProgress<string> Progress => new Progress<string>(message => { _status.Text = message; });
@@ -137,6 +157,18 @@ internal sealed partial class MainWindow : Window
         _settings.SelectedVersion = _installed.SelectedItem as string;
         SaveExtendedSettings();
         _settings.Save();
+    }
+
+    private void SaveGeometry()
+    {
+        if (WindowState == WindowState.Normal)
+        {
+            _settings.WindowWidth = Math.Max(850, Bounds.Width);
+            _settings.WindowHeight = Math.Max(500, Bounds.Height);
+            _settings.WindowX = Position.X;
+            _settings.WindowY = Position.Y;
+        }
+        _settings.WindowMaximized = WindowState == WindowState.Maximized;
     }
 
     private void RefreshInstalled()
@@ -188,6 +220,7 @@ internal sealed partial class MainWindow : Window
         await GameLauncher.InstallAsync(release, Progress, token);
         RefreshInstalled(); _installed.SelectedItem = release.Id;
         AppendLog($"{release.Id} 下载与 SHA-1 校验完成。");
+        Notify("Minecraft 安装完成", $"{release.Id} 已下载并通过校验。");
     }
 
     private MicrosoftProvider MicrosoftProvider => new(_clientId.Text?.Trim());
@@ -204,6 +237,7 @@ internal sealed partial class MainWindow : Window
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     AppendLog($"打开 {data.VerificationUri}，输入授权码：{data.UserCode}");
+                    Notify("Microsoft 登录", $"请在浏览器中打开 {data.VerificationUri}，输入授权码：{data.UserCode}");
                     _status.Text = $"请在浏览器登录并输入：{data.UserCode}";
                     try { Process.Start(new ProcessStartInfo(data.VerificationUri!) { UseShellExecute = true }); }
                     catch { AppendLog("浏览器未能自动打开，请手动访问上方地址。"); }
@@ -282,7 +316,7 @@ internal sealed partial class MainWindow : Window
         {
             if (_authlib.IsChecked == true)
                 await AuthlibSupport.ConfigureAsync(prepared, _settings.AuthlibAccount!.Server ?? _settings.AuthlibServer,
-                    Path.Combine(GameLauncher.GameDirectory, ".pcl-tools"), _client, token);
+                    LinuxPaths.ToolsHome, _client, token);
             token.ThrowIfCancellationRequested();
             _gameOperation = new CancellationTokenSource();
             _ = MonitorGameAsync(prepared, id, account, _gameOperation);
@@ -316,6 +350,7 @@ internal sealed partial class MainWindow : Window
         _cancel.Content = "停止游戏";
         _status.Text = $"{id} 正在运行";
         AppendLog($"游戏已启动（PID {process.Id}），日志：{prepared.LogPath}");
+        Notify("Minecraft 已启动", $"{id} 正在运行。");
         using var stop = token.Register(() => { try { if (!process.HasExited) process.Kill(true); } catch (InvalidOperationException) { } });
         using var writer = new StreamWriter(prepared.LogPath);
         using var writeLock = new SemaphoreSlim(1);
@@ -333,6 +368,7 @@ internal sealed partial class MainWindow : Window
         await Task.WhenAll(PumpAsync(process.StandardOutput), PumpAsync(process.StandardError), process.WaitForExitAsync());
         await writer.FlushAsync();
         AppendLog($"游戏已退出，退出码：{process.ExitCode}");
+        Notify("Minecraft 已退出", $"{id} 退出码：{process.ExitCode}" + (process.ExitCode == 0 ? "" : "，可查看运行日志分析原因。"));
         token.ThrowIfCancellationRequested();
         if (process.ExitCode != 0) throw new InvalidOperationException($"Minecraft 异常退出（{process.ExitCode}），请查看 {prepared.LogPath}");
     }

@@ -109,7 +109,9 @@ internal sealed partial class MainWindow
         dialog.TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         dialog.Background = Brushes.Transparent; dialog.RequestedThemeVariant = RequestedThemeVariant;
         dialog.Classes.Set("motion", MotionEnabled);
-        foreach (var key in new[] { "PclAccent", "PclAccentHover", "PclAccentPressed", "PclHover", "PclPage", "PclSurface", "PclText", "PclMuted", "PclLine" })
+        try { Avalonia.Controls.Documents.TextElement.SetFontFamily(dialog, new FontFamily(LinuxFonts.Resolve(_settings.InterfaceFont))); }
+        catch (Exception ex) { AppendLog("设置弹窗字体失败：" + ex.Message); }
+        foreach (var key in new[] { "PclAccent", "PclAccentHover", "PclAccentPressed", "PclHover", "PclPage", "PclSurface", "PclSidebar", "PclText", "PclMuted", "PclLine" })
             if (Resources.TryGetResource(key, ActualThemeVariant, out var value)) dialog.Resources[key] = value!;
         var layout = new Grid { RowDefinitions = new RowDefinitions("38,*") };
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(16, 3, 6, 0) };

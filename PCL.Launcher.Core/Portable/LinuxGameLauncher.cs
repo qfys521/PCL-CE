@@ -6,19 +6,46 @@ namespace PCL.Portable;
 
 public sealed record LibraryDownload(string Path, string? Url, string? Hash, bool Native);
 
-/// <summary>Native Linux launch adapter with inherited profiles and isolated instances.</summary>
-public sealed class LinuxGameLauncher(string gameDirectory, HttpClient client)
+/// <summary>
+/// Native Linux launch adapter with inherited profiles and isolated instances.
+/// 游戏数据（versions / assets / libraries / instances）位于用户选择的游戏目录；
+/// 原生库解压目录与运行日志属于启动器缓存，默认放在 XDG 缓存/状态目录（见 <see cref="LinuxPaths"/>）。
+/// </summary>
+public sealed class LinuxGameLauncher
 {
     public const string ManifestUrl = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
-    public string GameDirectory { get; } = Path.GetFullPath(gameDirectory);
-    private readonly VerifiedDownloads _downloads = new(client);
+
+    /// <summary>保留的游戏运行日志数量上限。</summary>
+    private const int MaxLogFiles = 30;
+
+    /// <summary>游戏运行日志的保留天数。</summary>
+    private const int MaxLogAgeDays = 14;
+
+    public LinuxGameLauncher(string gameDirectory, HttpClient client, string? cacheDirectory = null, string? logDirectory = null)
+    {
+        GameDirectory = Path.GetFullPath(gameDirectory);
+        CacheDirectory = Path.GetFullPath(cacheDirectory ?? LinuxPaths.NativesCache);
+        LogDirectory = Path.GetFullPath(logDirectory ?? LinuxPaths.LogsHome);
+        _downloads = new VerifiedDownloads(client);
+    }
+
+    /// <summary>用户选择的游戏目录（versions / assets / libraries / instances 均在此目录下）。</summary>
+    public string GameDirectory { get; }
+
+    /// <summary>启动器缓存目录，原生库解压到其下的 <c>&lt;hex-guid&gt;</c> 子目录。默认 <see cref="LinuxPaths.NativesCache"/>。</summary>
+    public string CacheDirectory { get; }
+
+    /// <summary>启动器写出的游戏运行日志目录。默认 <see cref="LinuxPaths.LogsHome"/>。</summary>
+    public string LogDirectory { get; }
+
+    private readonly VerifiedDownloads _downloads;
     private IReadOnlyList<GameRelease>? _catalog;
     private VersionResolver Resolver => new(GameDirectory, FetchMetadataAsync);
 
     public async Task<IReadOnlyList<GameRelease>> GetVersionsAsync(CancellationToken token)
     {
         if (_catalog is not null) return _catalog;
-        var json = JsonNode.Parse(await client.GetStringAsync(ManifestUrl, token))!;
+        var json = JsonNode.Parse(await _downloads.FetchTextAsync(ManifestUrl, token))!;
         _catalog = json["versions"]!.AsArray().OfType<JsonObject>()
             .Select(version => new GameRelease(version["id"]!.GetValue<string>(), version["type"]!.GetValue<string>(),
                 version["url"]!.GetValue<string>(), version["sha1"]!.GetValue<string>())).ToArray();
@@ -162,7 +189,8 @@ public sealed class LinuxGameLauncher(string gameDirectory, HttpClient client)
         var version = resolved.Metadata;
         var instance = settings.InstanceDirectory ?? await GetInstanceDirectoryAsync(id, token);
         Directory.CreateDirectory(instance);
-        var natives = Path.Combine(GameDirectory, ".pcl-natives", Guid.NewGuid().ToString("N"));
+        // 原生库属于启动器缓存，放在 XDG 缓存目录（默认 ~/.cache/pcl-ce/natives），不污染游戏目录。
+        var natives = Path.Combine(CacheDirectory, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(natives);
         try
         {
@@ -173,7 +201,7 @@ public sealed class LinuxGameLauncher(string gameDirectory, HttpClient client)
             var assetsId = version["assetIndex"]?["id"]?.GetValue<string>() ?? version["assets"]?.GetValue<string>() ?? "legacy";
             var variables = new Dictionary<string, string>
             {
-                ["natives_directory"] = natives, ["launcher_name"] = "PCL-CE", ["launcher_version"] = "0.2.0",
+                ["natives_directory"] = natives, ["launcher_name"] = "PCL-CE", ["launcher_version"] = "1.0.0",
                 ["classpath"] = classpath, ["classpath_separator"] = Path.PathSeparator.ToString(),
                 ["library_directory"] = Path.Combine(GameDirectory, "libraries"),
                 ["auth_player_name"] = settings.Account.Name, ["version_name"] = id,
@@ -212,12 +240,36 @@ public sealed class LinuxGameLauncher(string gameDirectory, HttpClient client)
             foreach (var argument in LinuxRules.Arguments(gameArgs, variables)) start.ArgumentList.Add(argument);
             foreach (var argument in PortableArguments.Split(version["pclGameArguments"]?.ToString() ?? "")) start.ArgumentList.Add(argument);
             foreach (var argument in PortableArguments.Split(settings.ExtraGameArguments)) start.ArgumentList.Add(argument);
-            var logDirectory = Path.Combine(instance, "logs");
-            Directory.CreateDirectory(logDirectory);
-            return new(start, Path.Combine(logDirectory, $"pcl-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.log"),
+            // 运行日志属于启动器状态数据，放在 XDG 状态目录（默认 ~/.local/state/pcl-ce/logs），
+            // 而不是用户游戏目录/实例目录里，避免污染存档与整合包导出。
+            Directory.CreateDirectory(LogDirectory);
+            CleanupGameLogs();
+            var logPath = Path.Combine(LogDirectory,
+                $"game-{id}-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..8]}.log");
+            return new(start, logPath,
                 version["javaVersion"]?["majorVersion"]?.GetValue<int>() ?? 8, natives);
         }
         catch { Directory.Delete(natives, true); throw; }
+    }
+
+    /// <summary>清理过旧的运行日志：删除超过 14 天的日志，并只保留最新的 30 个。尽力而为，从不抛出。</summary>
+    private void CleanupGameLogs()
+    {
+        try
+        {
+            if (!Directory.Exists(LogDirectory)) return;
+            var files = new DirectoryInfo(LogDirectory).EnumerateFiles("game-*.log")
+                .OrderByDescending(file => file.LastWriteTimeUtc).ToArray();
+            var cutoff = DateTime.UtcNow.AddDays(-MaxLogAgeDays);
+            for (var index = 0; index < files.Length; index++)
+            {
+                if (index < MaxLogFiles && files[index].LastWriteTimeUtc >= cutoff) continue;
+                try { files[index].Delete(); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
+        catch (Exception) { }
     }
 
     public static void ExtractNatives(string archive, string destination)

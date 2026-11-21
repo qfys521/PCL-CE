@@ -82,7 +82,8 @@ public static class PortableMaven
         var classifier = parts.Length == 4 ? "-" + parts[3] : "";
         var relative = $"{parts[0].Replace('.', '/')}/{parts[1]}/{parts[2]}/{parts[1]}-{parts[2]}{classifier}.{extension}";
         // Validate coordinates as relative paths before using them for repositories or the filesystem.
-        _ = LinuxRules.ResolvePath(System.IO.Path.GetTempPath(), relative);
+        // Use the app-owned temp root as the (virtual) resolution base, never Path.GetTempPath().
+        _ = LinuxRules.ResolvePath(LinuxPaths.TempHome, relative);
         return relative;
     }
 

@@ -18,7 +18,7 @@ internal sealed partial class MainWindow
     private string SelectedId => _installed.SelectedItem as string ?? throw new InvalidOperationException("请先选择游戏版本。");
     private ContentCatalog Catalog => new(_client, _curseKey.Text);
     private ModpackInstaller Packs => new(GameLauncher, _client, _curseKey.Text);
-    private JavaRuntimeInstaller JavaRuntimes => new(Path.Combine(GameLauncher.GameDirectory, ".pcl-java"), _client);
+    private JavaRuntimeInstaller JavaRuntimes => new(LinuxPaths.JavaRuntimeHome, _client);
 
     private static McProfile AuthlibProfile(AuthenticationResult result) => new()
     {
@@ -204,7 +204,7 @@ internal sealed partial class MainWindow
         if (project.Kind == "modpack")
         {
             var file = version.Files.FirstOrDefault() ?? throw new InvalidDataException("资源没有可下载文件。");
-            var cache = LinuxRules.ResolvePath(Path.Combine(GameLauncher.GameDirectory, ".pcl-downloads"), file.Name);
+            var cache = LinuxRules.ResolvePath(LinuxPaths.DownloadsCache, file.Name);
             await new VerifiedDownloads(_client).FetchAsync(file.Url, cache, file.Hash, token);
             await ImportPackPathAsync(cache, token);
         }
@@ -216,11 +216,19 @@ internal sealed partial class MainWindow
                 var compatibility = await CompatibilityAsync(token);
                 await Catalog.InstallModAsync(version, directory, compatibility.Minecraft, compatibility.Loader, Progress, token);
             }
-            else foreach (var file in version.Files)
-                await new VerifiedDownloads(_client).FetchAsync(file.Url,
-                    LinuxRules.ResolvePath(Path.Combine(directory, project.Kind == "shader" ? "shaderpacks" : "resourcepacks"), file.Name), file.Hash, token);
+            else
+            {
+                // ext4/btrfs 区分大小写：远端文件名大小写与本地不一致时复用已有文件，避免重复下载。
+                var contentDirectory = Path.Combine(directory, project.Kind == "shader" ? "shaderpacks" : "resourcepacks");
+                foreach (var file in version.Files)
+                {
+                    var target = LocalMods.ResolveContentTarget(contentDirectory, file.Name);
+                    await new VerifiedDownloads(_client).FetchAsync(file.Url, LinuxRules.ResolvePath(Path.GetDirectoryName(target)!, Path.GetFileName(target)), file.Hash, token);
+                }
+            }
         }
         AppendLog($"已安装：{project.Title} / {version.Name}");
+        Notify("资源安装完成", project.Title + " / " + version.Name);
     }
 
     private async Task ImportPackAsync(CancellationToken token)
@@ -244,6 +252,7 @@ internal sealed partial class MainWindow
         await Packs.ImportAsync(path, id, java, Progress, token);
         RefreshInstalled(); _installed.SelectedItem = id; SaveSettings();
         AppendLog($"已导入整合包：{plan.Name} → {id}");
+        Notify("整合包导入完成", $"{plan.Name} → {id}");
     }
     private async Task ExportPackAsync(CancellationToken token)
     {
@@ -277,7 +286,7 @@ internal sealed partial class MainWindow
         get
         {
             if (_lobby is not null) return _lobby;
-            _lobby = new LinuxLobby(Path.Combine(GameLauncher.GameDirectory, ".pcl-tools"), _settings.MachineId, _client);
+            _lobby = new LinuxLobby(LinuxPaths.ToolsHome, _settings.MachineId, _client);
             _lobby.Log += message => Dispatcher.UIThread.Post(() => AppendLog(message));
             _lobby.PlayersChanged += players => Dispatcher.UIThread.Post(() => _roomPlayers.Text = string.Join('\n', players.Select(player => player.Name + " · " + player.Vendor)));
             return _lobby;
@@ -287,11 +296,13 @@ internal sealed partial class MainWindow
     {
         var code = await Lobby.CreateAsync(_name.Text ?? "Player", (int)(_roomPort.Value ?? 25565), _relays.Text ?? "", Progress, token);
         _roomCode.Text = code; _roomStatus.Text = "大厅已创建。请保持 Minecraft 的局域网世界开放，并分享大厅编号。";
+        Notify("联机大厅已创建", "大厅编号：" + code);
     }
     private async Task JoinLobbyAsync(CancellationToken token)
     {
         var port = await Lobby.JoinAsync(_name.Text ?? "Player", _roomCode.Text ?? "", _relays.Text ?? "", Progress, token);
         _roomStatus.Text = $"已加入大厅。Minecraft 多人游戏可自动发现，或直接连接 127.0.0.1:{port}";
+        Notify("已加入联机大厅", $"可在游戏内连接 127.0.0.1:{port}");
     }
     private async Task LeaveLobbyAsync(CancellationToken token)
     {
@@ -403,7 +414,7 @@ internal sealed partial class MainWindow
     {
         _animations.IsChecked = true;
         await _navigationTask;
-        foreach (var page in new[] { "launch", "download", "catalog", "packs", "instances", "mods", "version-settings", "settings", "appearance", "services", "lobby", "logs", "more" })
+        foreach (var page in new[] { "launch", "download", "catalog", "packs", "instances", "mods", "version-settings", "settings", "appearance", "services", "wipe", "linux", "diagnostics", "lobby", "logs", "more" })
         {
             Navigate(page); await _navigationTask;
             VerifyCurrentPage(page);
@@ -443,7 +454,7 @@ internal sealed partial class MainWindow
         if ((_log.Text ?? "").Contains("界面动画已跳过：", StringComparison.Ordinal))
             throw new InvalidOperationException("界面动画发生异常，请查看日志。");
         Console.WriteLine("UI_PAGES_VERIFIED");
-        Console.WriteLine("UI_MOTION_VERIFIED: 13 pages, exit/entrance interruption, homepage refresh, motion toggle, rounded dialog");
+        Console.WriteLine("UI_MOTION_VERIFIED: 16 pages, exit/entrance interruption, homepage refresh, motion toggle, rounded dialog");
     }
 
     private void VerifyCurrentPage(string page)
