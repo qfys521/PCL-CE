@@ -8,7 +8,7 @@
 | --- | --- |
 | .NET SDK | 11.0.100（项目内 `.tools/dotnet`），发布目标框架 .NET 10.0.15 自包含 linux-x64 |
 | `PCL.Linux` Release 构建 | 0 错误 |
-| `PCL.Linux.Test` | 63 / 63 通过（XDG 路径、清理数据、桌面集成、大小写容错、镜像回退、Linux 启动规则、整合包、Java 检测等） |
+| `PCL.Linux.Test` | 72 / 72 通过（XDG 路径、清理数据、桌面集成、远程文件名安全、大小写容错、镜像回退、Linux 启动规则、整合包、Java 检测等） |
 | 原 Windows WPF 工程 | 0 错误（仅移除 CE 提示卡片与对应多语言键，未改动其余界面） |
 | AppImage 构建 | `scripts/build-appimage.sh`（mksquashfs zstd-19 + 固定版本 type2 runtime，无需 FUSE / appimagetool / docker） |
 | 产物 | `artifacts/PCL-CE-Linux-1.0.0-x86_64.AppImage`，约 69 MiB，SquashFS 内 383 个文件 |
