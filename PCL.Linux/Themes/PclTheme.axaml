@@ -1,0 +1,197 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <SolidColorBrush x:Key="PclAccent">#147AD6</SolidColorBrush>
+        <SolidColorBrush x:Key="PclAccentHover">#308ADB</SolidColorBrush>
+        <SolidColorBrush x:Key="PclAccentPressed">#1168B6</SolidColorBrush>
+        <SolidColorBrush x:Key="PclHover">#14147AD6</SolidColorBrush>
+        <SolidColorBrush x:Key="PclPage">#F3F4F5</SolidColorBrush>
+        <SolidColorBrush x:Key="PclSurface">White</SolidColorBrush>
+        <SolidColorBrush x:Key="PclSidebar">#FAFAFA</SolidColorBrush>
+        <SolidColorBrush x:Key="PclText">#30343B</SolidColorBrush>
+        <SolidColorBrush x:Key="PclMuted">#7B818A</SolidColorBrush>
+        <SolidColorBrush x:Key="PclLine">#DAE1E8</SolidColorBrush>
+        <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+        <CornerRadius x:Key="OverlayCornerRadius">8</CornerRadius>
+    </Styles.Resources>
+    <Style Selector="Window">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource PclText}" />
+        <Setter Property="Background" Value="{DynamicResource PclPage}" />
+    </Style>
+    <Style Selector="Button.pcl">
+        <Setter Property="Foreground" Value="{DynamicResource PclAccent}" />
+        <Setter Property="Background" Value="{DynamicResource PclSurface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PclAccent}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid>
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Padding="{TemplateBinding Padding}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <Border Name="FocusRing" BorderBrush="{DynamicResource PclAccent}" BorderThickness="2"
+                            CornerRadius="9" Margin="-3" Opacity="0" IsHitTestVisible="False" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Window.motion Button.pcl">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.15" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" Easing="CubicEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.pcl:pointerover">
+        <Setter Property="Background" Value="{DynamicResource PclHover}" />
+        <Setter Property="RenderTransform" Value="scale(1.015)" />
+    </Style>
+    <Style Selector="Button.pcl:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.955)" />
+    </Style>
+    <Style Selector="Window.motion Button.pcl:pressed">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.08" />
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.08" Easing="CubicEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.pcl:disabled">
+        <Setter Property="Opacity" Value="0.4" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+    </Style>
+    <Style Selector="Button.pcl:focus-visible /template/ Border#FocusRing">
+        <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="Window.motion Button.pcl /template/ Border#FocusRing">
+        <Setter Property="Transitions"><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.12" /></Transitions></Setter>
+    </Style>
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="{DynamicResource PclAccent}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Button.primary:pointerover">
+        <Setter Property="Background" Value="{DynamicResource PclAccentHover}" />
+    </Style>
+    <Style Selector="Button.primary:pressed">
+        <Setter Property="Background" Value="{DynamicResource PclAccentPressed}" />
+    </Style>
+    <Style Selector="Button.nav">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="13,6" />
+        <Setter Property="CornerRadius" Value="7" />
+    </Style>
+    <Style Selector="Button.nav:pointerover">
+        <Setter Property="Background" Value="#20FFFFFF" />
+    </Style>
+    <Style Selector="Button.nav.selected">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav.close:pointerover">
+        <Setter Property="Background" Value="#E04B50" />
+    </Style>
+    <Style Selector="Button.dialog-close:pointerover">
+        <Setter Property="Background" Value="#E04B50" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.sidebar">
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Margin" Value="8,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource PclText}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Padding" Value="15,10" />
+    </Style>
+    <Style Selector="Button.sidebar:pointerover, Button.sidebar.selected">
+        <Setter Property="Background" Value="{DynamicResource PclHover}" />
+        <Setter Property="Foreground" Value="{DynamicResource PclAccent}" />
+    </Style>
+    <Style Selector="Button.sidebar:pointerover">
+        <Setter Property="RenderTransform" Value="translate(3px,0)" />
+    </Style>
+    <Style Selector="Button.sidebar:pressed">
+        <Setter Property="RenderTransform" Value="translate(2px,0) scale(0.985)" />
+    </Style>
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource PclSurface}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="20,17" />
+        <Setter Property="Margin" Value="0,0,0,15" />
+        <Setter Property="BoxShadow" Value="0 2 7 0 #10000000" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="#08000000" />
+    </Style>
+    <Style Selector="Window.motion Border.card">
+        <Setter Property="Transitions"><Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.18" />
+            <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
+        </Transitions></Setter>
+    </Style>
+    <Style Selector="Border.card:pointerover">
+        <Setter Property="BoxShadow" Value="0 4 12 0 #18000000" />
+    </Style>
+    <Style Selector="TextBox, ComboBox, NumericUpDown">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PclLine}" />
+    </Style>
+    <Style Selector="Window.motion TextBox, Window.motion ComboBox, Window.motion NumericUpDown">
+        <Setter Property="Transitions"><Transitions>
+            <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+            <BrushTransition Property="Background" Duration="0:0:0.16" />
+        </Transitions></Setter>
+    </Style>
+    <Style Selector="TextBox:pointerover, ComboBox:pointerover, NumericUpDown:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource PclAccentHover}" />
+    </Style>
+    <Style Selector="TextBox:focus-within, ComboBox:focus-within, NumericUpDown:focus-within">
+        <Setter Property="BorderBrush" Value="{DynamicResource PclAccent}" />
+    </Style>
+    <Style Selector="ListBox">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PclLine}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="4" />
+    </Style>
+    <Style Selector="ListBoxItem, ComboBoxItem">
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="Margin" Value="2" />
+    </Style>
+    <Style Selector="Window.motion ListBoxItem, Window.motion ComboBoxItem, Window.motion CheckBox">
+        <Setter Property="Transitions"><Transitions>
+            <BrushTransition Property="Background" Duration="0:0:0.13" />
+            <BrushTransition Property="Foreground" Duration="0:0:0.13" />
+        </Transitions></Setter>
+    </Style>
+    <Style Selector="ListBoxItem:pointerover, ComboBoxItem:pointerover, ListBoxItem:selected, ComboBoxItem:selected">
+        <Setter Property="Background" Value="{DynamicResource PclHover}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected, ComboBoxItem:selected, CheckBox:checked">
+        <Setter Property="Foreground" Value="{DynamicResource PclAccent}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+        <Setter Property="Foreground" Value="{DynamicResource PclMuted}" />
+    </Style>
+</Styles>

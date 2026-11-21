@@ -346,3 +346,9 @@ MaskFiles/
 # macOS
 
 **/.DS_Store
+# Local build toolchain & notes
+.tools/
+.notes/
+
+# Linux build outputs
+/artifacts/

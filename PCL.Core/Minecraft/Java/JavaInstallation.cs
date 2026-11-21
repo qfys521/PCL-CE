@@ -12,7 +12,7 @@ public sealed record JavaInstallation(
     bool Is64Bit,
     bool IsJre)
 {
-    public string JavaExePath => Path.Combine(JavaFolder, "java.exe");
+    public string JavaExePath => Path.Combine(JavaFolder, OperatingSystem.IsWindows() ? "java.exe" : "java");
     public string? JavawExePath
     {
         get

@@ -1,0 +1,7 @@
+<Solution>
+    <Project Path="PCL.Core/PCL.Core.csproj" />
+    <Project Path="PCL.Core.SourceGenerators/PCL.Core.SourceGenerators.csproj" />
+    <Project Path="PCL.Launcher.Core/PCL.Launcher.Core.csproj" />
+    <Project Path="PCL.Linux/PCL.Linux.csproj" />
+    <Project Path="PCL.Linux.Test/PCL.Linux.Test.csproj" />
+</Solution>

@@ -183,6 +183,8 @@ public class JavaManager(
 
     private static bool _ShouldEnableByDefault(JavaInstallation inst)
     {
+        if (!OperatingSystem.IsWindows())
+            return inst.IsStillAvailable && inst.Is64Bit == Environment.Is64BitOperatingSystem;
         var libDir = Path.Combine(Directory.GetParent(inst.JavaFolder)!.FullName, "lib");
         var isUsable = (!inst.IsJre && File.Exists(Path.Combine(libDir, "jvm.lib"))) ||
                        (inst.IsJre && File.Exists(Path.Combine(libDir, "rt.jar")));

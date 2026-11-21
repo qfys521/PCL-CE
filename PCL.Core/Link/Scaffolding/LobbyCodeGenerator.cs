@@ -46,7 +46,7 @@ public static class LobbyCodeGenerator
         var randomValue = _GetSecureRandomUInt128();
         var valueInRange = randomValue % _EncodingMaxValue;
         var remainder = valueInRange % 7;
-        var validValue = randomValue - remainder;
+        var validValue = valueInRange - remainder;
 
         return _Encode(validValue);
     }

@@ -41,7 +41,8 @@ Everyone is welcome to try it out!
 | Windows 10 1809 (17763) or later | ✅ Fully supported | [.NET 10 Desktop Runtime](http://get.dot.net/10) |
 | Windows 8 to Windows 10 1809 (17763) | ⚠️ Expected to run; community support offered at discretion | [.NET 10 Desktop Runtime](http://get.dot.net/10) |
 | Windows 7 or earlier | ❌ Not supported | N/A |
-| macOS / Linux / Other OS | ⚠️ Cross-platform development only (cross-compilation) | [.NET 11 SDK](http://get.dot.net/11) |
+| Linux x86_64 | 🧪 [Native preview](PCL.Linux/README.md), limited features | Bundled .NET; OpenJDK required for Minecraft |
+| macOS / Other OS | ⚠️ Cross-platform development only (cross-compilation) | [.NET 11 SDK](http://get.dot.net/11) |
 
 **✅ Fully supported**: We will provide as much support as possible, but you must ensure you are using the latest version of the launcher.
 
@@ -50,6 +51,8 @@ Everyone is welcome to try it out!
 **❌ Not supported**: PCL CE may not be usable on these platforms and might not even launch at all. Please upgrade your OS to use PCL CE.
 
 **⚠️ Cross-platform development only (cross-compilation)**: PCL CE’s source code can be built on macOS and Linux, but it cannot run directly. As a developer, you can develop on these platforms and then move the build artifacts to Windows for testing.
+
+**🧪 Native Linux preview**: The Avalonia frontend follows the Windows layout and supports vanilla and loader installation, isolated instances, mods, modpacks, custom homepages, crash analysis, and Scaffolding multiplayer. See the [Linux guide](PCL.Linux/README.md) for supported features and validation. The cross-compilation limitation above applies to the original WPF interface.
 
 **Note**:     
 The community only supports the latest version of the launcher.    

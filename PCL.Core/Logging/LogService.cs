@@ -8,7 +8,7 @@ using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
 using PCL.Core.UI;
 using PCL.Core.UI.Dialogs;
-using System.Windows;
+using PCL.Core.Platform;
 
 namespace PCL.Core.Logging;
 
@@ -124,11 +124,10 @@ public class LogService : ILifecycleLogService
                     "SystemDialog.Fatal.Message.WithFeedbackGuidance",
                     _ComposeUserError(plain, entry.Exception));
 
-                MessageBox.Show(
-                    message,
-                    Lang.Text("SystemDialog.Fatal.Title"),
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                if (PlatformServices.DialogService is { } dialogs)
+                    dialogs.ShowFatal(message, Lang.Text("SystemDialog.Fatal.Title"));
+                else
+                    Console.Error.WriteLine(message);
 
                 break;
             }

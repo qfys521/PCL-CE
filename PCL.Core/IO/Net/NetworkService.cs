@@ -158,6 +158,17 @@ public partial class NetworkService
                throw new InvalidOperationException("在初始化完成前的意外调用");
     }
 
+    /// <summary>
+    /// Supplies networking for a host that manages its own lifecycle, such as the native Linux UI.
+    /// Call once during host startup, before using authentication providers. The host owns the factory.
+    /// </summary>
+    public static void ConfigureClientFactory(IHttpClientFactory factory)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+        if (_factory is not null) throw new InvalidOperationException("HTTP client factory is already configured.");
+        _factory = factory;
+    }
+
     private const int BaseRetryDelayMs = 1000;
     private const int MaxRetryDelayMs = 30000;
 

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <AssemblyName>PCL-CE</AssemblyName>
+        <RootNamespace>PCL.Linux</RootNamespace>
+        <LangVersion>15.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Version>0.2.1</Version>
+        <Description>PCL CE native Linux preview</Description>
+        <ApplicationIcon>../Plain Craft Launcher 2/Images/icon.ico</ApplicationIcon>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Desktop" Version="11.3.23" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.23" />
+        <ProjectReference Include="../PCL.Launcher.Core/PCL.Launcher.Core.csproj" />
+        <EmbeddedResource Include="../Plain Craft Launcher 2/metadata.json" LogicalName="PCL.metadata.json" />
+        <Content Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="../PCL.Launcher.Core/LICENCE" Link="LICENCE-launcher" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="README.md" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="pcl-ce.desktop" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="../Plain Craft Launcher 2/Images/Heads/Logo-CE.png" Link="pcl-ce.png" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="../Plain Craft Launcher 2/Images/**/*" Link="Images/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+</Project>

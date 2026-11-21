@@ -41,7 +41,8 @@ PCL CE 是基于 PCL 开源代码二次开发的社区版本，包括了主线�
 | Windows 10 1809 (17763) 或更高 | ✅ 完整支持 | [.NET 10 Desktop Runtime](https://get.dot.net/10) |
 | Windows 8 - Windows 10 1809 (17763) | ⚠️ 理论能跑，酌情提供社区支持 | [.NET 10 Desktop Runtime](https://get.dot.net/10) |
 | Windows 7 或更低版本 | ❌ 不支持 | / |
-| macOS / Linux / 其他操作系统 | ⚠️ 仅跨平台开发支持（交叉编译） | [.NET 11 SDK](https://get.dot.net/11) |
+| Linux x86_64 | 🧪 [原生预览版](PCL.Linux/README.md)，功能有限 | 发布包自带 .NET；游戏需 OpenJDK |
+| macOS / 其他操作系统 | ⚠️ 仅跨平台开发支持（交叉编译） | [.NET 11 SDK](https://get.dot.net/11) |
 
 **✅ 完整支持**：尽可能提供一切相关支持，但必须确保启动器为最新版本。
 
@@ -50,6 +51,8 @@ PCL CE 是基于 PCL 开源代码二次开发的社区版本，包括了主线�
 **❌ 不支持**：PCL CE 在这些平台的可用性较低，甚至压根打不开。请升级操作系统以使用 PCL CE。
 
 **⚠️ 仅跨平台开发支持（交叉编译）**：PCL CE 的源代码可以在 macOS 与 Linux 平台编译，但无法直接运行。作为开发者，你可以在这些平台上进行开发，然后将编译产物转移到 Windows 系统测试。
+
+**🧪 Linux 原生预览版**：使用 Avalonia 移植 Windows 版布局，支持原版与加载器安装、隔离实例、模组和整合包、自定义主页、崩溃分析及 Scaffolding 联机。功能与验证范围见 [Linux 说明](PCL.Linux/README.md)。上述交叉编译限制针对原有 WPF 界面。
 
 **注**：    
 社区仅对最新版本的启动器提供支持。    

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=PCL CE Linux (Preview)
+Name[zh_CN]=PCL CE Linux（预览版）
+Comment=Minecraft launcher
+Exec=PCL-CE
+Icon=pcl-ce
+Terminal=false
+Categories=Game;
+StartupWMClass=PCL-CE

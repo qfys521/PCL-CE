@@ -64,13 +64,19 @@ public class ScaffoldingServerContext : IServerContext
     /// <param name="mcPort">Minecraft shared port.</param>
     public static ScaffoldingServerContext Create(string playerName, int mcPort)
     {
-        var machineId = Utils.Secret.Identify.LauncherId;
+        return Create(playerName, mcPort, Utils.Secret.Identify.LauncherId,
+            $"PCL CE {Basics.VersionName}, EasyTier {EasyTierMetadata.CurrentEasyTierVer}");
+    }
+
+    /// <summary>Host-provided identity keeps native frontends independent of Windows identity storage.</summary>
+    public static ScaffoldingServerContext Create(string playerName, int mcPort, string machineId, string vendor)
+    {
         var profile = new PlayerProfile
         {
             Name = playerName,
-            MachineId = Utils.Secret.Identify.LauncherId,
+            MachineId = machineId,
             // Please update ScaffoldingFactory.cs at the same time.
-            Vendor = $"PCL CE {Basics.VersionName}, EasyTier {EasyTierMetadata.CurrentEasyTierVer}",
+            Vendor = vendor,
             Kind = PlayerKind.HOST
         };
 
