@@ -4,6 +4,7 @@
 SHA256 `b3757f4e8671b6fa1afb40b85e5b4873ccd97abe555b23d392e5225ca833baf9`。
 GitHub Release：<https://github.com/qfys521/PCL-CE/releases/tag/v1.0.0-linux>
 界面截图：`docs/linux/`（启动页浅色/深色/2x、数据清理、系统诊断、桌面集成）。
+二进制构建自源码提交 `79b7db23`（其后仅有文档与截图提交，不影响二进制；构建脚本从无 `.git` 的导出副本构建，故包内 BUILD-INFO 的 Source 显示为导出副本）。
 
 本文件记录 1.0.0 AppImage 的构建与验证环境、命令和结果。验证日期为 2026-11-22，构建机为 Ubuntu 26.10（glibc 2.41，16 核），运行会话为 GNOME Wayland + XWayland、NVIDIA RTX 4060 Laptop。
 
