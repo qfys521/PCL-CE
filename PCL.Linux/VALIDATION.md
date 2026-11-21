@@ -14,7 +14,7 @@
 | 产物 | `artifacts/PCL-CE-Linux-1.0.0-x86_64.AppImage`，约 69 MiB，SquashFS 内 383 个文件 |
 | `--appimage-offset` / `--appimage-extract` | 通过；AppRun、`.desktop`、`.DirIcon`、图标、MIME、字体齐全 |
 | `desktop-file-validate` | 通过（仅标准 “多个主分类” 提示）；AppStream `appstreamcli validate` 返回 0 |
-| glibc 符号版本 | 最高 `GLIBC_2.27`，可在 Ubuntu 20.04 / Debian 10 及以上运行 |
+| glibc 符号版本 | AppImage 运行时为 static-pie；核心原生库最高 `GLIBC_2.27`（Ubuntu 20.04 / Debian 10+）。包内两个当前未启用的可选组件 `libe_sqlite3.so`（2.34）与 `libdtls_native.so`（2.38）不影响启动与常规下载 |
 | 空环境运行 | 解包后 `AppRun --version/--diagnose/--help` 在 `env -i` 下可运行，使用内置 .NET 运行时 |
 
 ## 功能验证

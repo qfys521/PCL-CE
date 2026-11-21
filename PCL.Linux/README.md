@@ -34,7 +34,7 @@ chmod +x PCL-CE-Linux-1.0.0-x86_64.AppImage
 ```
 
 - 自带 .NET 10 运行时与全部托管 / 原生库，**不需要**安装 .NET、Mono 或 Wine。
-- 目标机需要的基础系统组件：glibc ≥ 2.27（Ubuntu 20.04 / Debian 10 或更新）、X11 或 XWayland（`libX11` / `libxcb`）、Fontconfig、Mesa / GPU 驱动（OpenGL，软件渲染时用 llvmpipe）。
+- 目标机需要的基础系统组件：glibc ≥ 2.27（Ubuntu 20.04 / Debian 10 或更新）、`libstdc++6` 与 `libgcc_s`（桌面发行版默认自带）、X11 或 XWayland（`libX11` / `libxcb`）、Fontconfig、Mesa / GPU 驱动（OpenGL，软件渲染时用 llvmpipe）。
 - 可选：`libgtk-3`（Avalonia 回退到 GTK 原生文件对话框时需要）、DBus 会话（系统通知与 Portal 文件选择器）。
 - 中文字体、图标主题、桌面入口模板、MIME 定义与许可证均包含在 AppImage 内。
 
@@ -138,7 +138,7 @@ APPIMAGE_EXTRACT_AND_RUN=1 ./PCL-CE-Linux-1.0.0-x86_64.AppImage
 
 - **Wayland：** Avalonia 11.3 没有原生 Wayland 后端，因此 Wayland 会话通过 XWayland（X11 协议）运行。好处是输入法候选窗、弹窗与窗口定位使用真实 X11 坐标，不会出现 Wayland 下常见的候选框错位；代价是需要系统启用 XWayland。没有 XWayland 时程序会给出中文提示并退出（退出码 2），不会崩溃。
 - **基础系统库不打包：** glibc、`libX11` / `libxcb`、Fontconfig、Mesa / GPU 驱动、可选的 GTK3 与 DBus 均由系统提供。AppImage 只保证 .NET 运行时、中文字体与图标主题自包含。
-- **glibc 版本：** 构建于较新的发行版，运行时要求 glibc ≥ 2.27（Ubuntu 20.04 / Debian 10 或更新）。更旧的发行版请在对应系统上执行 `scripts/build-appimage.sh` 重新构建。
+- **glibc 版本：** 构建于较新的发行版，运行时要求 glibc ≥ 2.27（Ubuntu 20.04 / Debian 10 或更新），AppImage 内核心原生库最高使用 `GLIBC_2.27` 符号；更旧的发行版请在对应系统上执行 `scripts/build-appimage.sh` 重新构建。包内附带但 Linux 版当前未启用的可选组件（`libe_sqlite3.so` SQLite 缓存、`libdtls_native.so` DTLS DNS）在启用时分别需要 glibc 2.34 / 2.38。
 - **无 FUSE 时**必须使用 `APPIMAGE_EXTRACT_AND_RUN=1` 或 `--appimage-extract-and-run`（首次启动会多花 1–2 秒解压）。
 - 移动 AppImage 文件后需要重新执行 `--register-desktop`，否则桌面入口仍指向旧路径。
 - 字体子集不包含全部 Unicode 字符；缺失的罕见字符回退到系统字体（若系统也没有则显示豆腐块）。
