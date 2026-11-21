@@ -335,7 +335,10 @@ public static class DesktopIntegration
             if (bundled is null) usedFallback = true;
             var target = IconPath(size);
             EnsureSharedDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(source, target, true);
+            // 先删除可能预先存在的文件/符号链接，避免 File.Copy 跟随符号链接写到目标之外。
+            try { if (File.Exists(target) || new FileInfo(target).LinkTarget is not null) File.Delete(target); }
+            catch (Exception) { }
+            File.Copy(source, target, false);
             if (OperatingSystem.IsLinux()) File.SetUnixFileMode(target, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
         }
         if (usedFallback && appDirIcons < IconSizes.Length)
@@ -465,11 +468,15 @@ public static class DesktopIntegration
             foreach (var argument in arguments) start.ArgumentList.Add(argument);
             using var process = Process.Start(start);
             if (process is null) return;
+            // 必须持续读取被重定向的输出，否则输出量大的工具可能因管道写满而卡住。
+            var drainOutput = process.StandardOutput.ReadToEndAsync();
+            var drainError = process.StandardError.ReadToEndAsync();
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
             timeout.CancelAfter(TimeSpan.FromSeconds(8));
             try
             {
                 await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+                await Task.WhenAll(drainOutput, drainError).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

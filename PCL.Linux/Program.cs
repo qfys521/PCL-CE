@@ -135,11 +135,28 @@ internal static class Program
             })
             .LogToTrace(LogEventLevel.Warning);
 
+    /// <summary>带值的命令行开关，它们的参数不是“要打开的文件”。</summary>
+    private static readonly HashSet<string> ValueFlags = new(StringComparer.Ordinal)
+    {
+        "--screenshot", "--install", "--launch", "--java", "--memory", "--timeout",
+        "--import-pack", "--instance", "--wipe-data", "--loader", "--loader-version"
+    };
+
     /// <summary>窗口创建后由 LinuxApp 调用，把外部参数（文件、pcl-ce:// 链接）交给主窗口。</summary>
     internal static void ForwardExternalArguments(MainWindow window, string[] args)
     {
-        var external = args.Where(argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
-        if (external.Length > 0) window.HandleExternalArguments(external);
+        var external = new List<string>();
+        for (var index = 0; index < args.Length; index++)
+        {
+            var argument = args[index];
+            if (argument.StartsWith("--", StringComparison.Ordinal))
+            {
+                if (ValueFlags.Contains(argument)) index++;
+                continue;
+            }
+            external.Add(argument);
+        }
+        if (external.Count > 0) window.HandleExternalArguments(external.ToArray());
     }
 
     private static LinuxSettings? _settingsForIntegration;
@@ -482,8 +499,18 @@ internal static class Program
             for (var next = index + 1; next < args.Length && !args[next].StartsWith("--", StringComparison.Ordinal); next++)
                 values.Add(args[next]);
         }
+        if (values.Count == 0)
+        {
+            Console.Error.WriteLine("请至少指定一个清空类别（或用 all 表示全部）。可用：" + string.Join(' ', aliases.Keys) + " all");
+            return 2;
+        }
+        if (IsAnotherInstanceRunning() && !args.Contains("--force"))
+        {
+            Console.Error.WriteLine("检测到 PCL-CE 正在运行。请先退出启动器再清空数据（或加 --force 强制清理）。");
+            return 4;
+        }
         var categories = new List<WipeCategory>();
-        if (values.Count == 0 || values.Contains("all", StringComparer.OrdinalIgnoreCase))
+        if (values.Contains("all", StringComparer.OrdinalIgnoreCase))
             categories.AddRange(Enum.GetValues<WipeCategory>());
         else
             foreach (var value in values)
@@ -511,6 +538,18 @@ internal static class Program
         foreach (var error in result.Errors) Console.Error.WriteLine("错误：" + error);
         Console.WriteLine("设置与账号已清空，请重新启动启动器。");
         return result.Errors.Count == 0 ? 0 : 1;
+    }
+
+    /// <summary>是否已有图形实例持有单实例锁。</summary>
+    private static bool IsAnotherInstanceRunning()
+    {
+        try
+        {
+            using var stream = new FileStream(LinuxPaths.LockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            return false;
+        }
+        catch (IOException) { return true; }
+        catch (Exception) { return false; }
     }
 
     private static int RegisterDesktop()

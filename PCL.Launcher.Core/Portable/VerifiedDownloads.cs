@@ -16,7 +16,8 @@ public sealed class VerifiedDownloads(HttpClient client)
 
     public async Task FetchAsync(string url, string destination, string? sha1, CancellationToken token)
     {
-        if (await IsValidAsync(destination, sha1, token)) return;
+        // 有校验值时必须匹配才复用缓存；没有校验值时无法证明缓存完整，重新下载（下载完成后只要求非空）。
+        if (!string.IsNullOrEmpty(sha1) && await IsValidAsync(destination, sha1, token)) return;
         var candidates = Candidates(url);
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         var temporary = destination + "." + Guid.NewGuid().ToString("N") + ".part";

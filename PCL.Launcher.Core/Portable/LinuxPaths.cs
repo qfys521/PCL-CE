@@ -98,7 +98,7 @@ public static class LinuxPaths
         get
         {
             var value = Environment.GetEnvironmentVariable("APPIMAGE");
-            return string.IsNullOrWhiteSpace(value) ? null : Path.GetFullPath(value);
+            return string.IsNullOrWhiteSpace(value) || !Path.IsPathFullyQualified(value) ? null : Path.GetFullPath(value);
         }
     }
 
@@ -127,7 +127,20 @@ public static class LinuxPaths
     /// <summary>创建目录并强制权限（仅属主可访问）。</summary>
     public static void EnsureDirectory(string path, UnixFileMode mode)
     {
-        if (Directory.Exists(path)) return;
+        if (Directory.Exists(path))
+        {
+            // 已存在的目录补齐属主权限（不削弱已有权限），保证应用私有目录至少 0700。
+            if (OperatingSystem.IsLinux())
+            {
+                try
+                {
+                    var current = File.GetUnixFileMode(path);
+                    if ((current & mode) != mode) File.SetUnixFileMode(path, current | mode);
+                }
+                catch (Exception) { }
+            }
+            return;
+        }
         Directory.CreateDirectory(path);
         if (OperatingSystem.IsLinux()) File.SetUnixFileMode(path, mode);
     }

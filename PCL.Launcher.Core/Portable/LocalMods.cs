@@ -46,10 +46,20 @@ public static class LocalMods
     /// 因此下载、导入、切换、删除前都要先复用已存在的同名（仅大小写不同）文件，避免产生重复文件。
     /// 找不到时返回 <c>null</c>。
     /// </summary>
+    /// <summary>校验来自网络/整合包的单个文件名，拒绝任何路径成分（防止写到模组目录之外）。</summary>
+    public static void RequireSafeFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || fileName is "." or ".." ||
+            System.IO.Path.IsPathRooted(fileName) || fileName.Contains('\\') || fileName.Contains('\0') ||
+            !string.Equals(System.IO.Path.GetFileName(fileName), fileName, StringComparison.Ordinal))
+            throw new InvalidDataException("远程文件名不安全，已拒绝：" + fileName);
+    }
+
     public static string? ResolveExistingCaseInsensitive(string directory, string fileName)
     {
-        if (string.IsNullOrWhiteSpace(directory) || string.IsNullOrWhiteSpace(fileName) || !Directory.Exists(directory)) return null;
-        var direct = System.IO.Path.Combine(directory, fileName);
+        RequireSafeFileName(fileName);
+        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return null;
+        var direct = LinuxRules.ResolvePath(directory, fileName);
         if (File.Exists(direct)) return direct;
         foreach (var entry in Directory.EnumerateFileSystemEntries(directory))
             if (string.Equals(System.IO.Path.GetFileName(entry), fileName, StringComparison.OrdinalIgnoreCase))
@@ -63,6 +73,7 @@ public static class LocalMods
     /// </summary>
     public static string ResolveContentTarget(string directory, string fileName)
     {
+        RequireSafeFileName(fileName);
         Directory.CreateDirectory(directory);
         if (ResolveExistingCaseInsensitive(directory, fileName) is { } existing) return existing;
         if (ResolveExistingCaseInsensitive(directory, fileName + DisabledSuffix) is { } disabled) Remove(Read(disabled));

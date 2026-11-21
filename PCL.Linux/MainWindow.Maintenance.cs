@@ -157,6 +157,9 @@ internal sealed partial class MainWindow
                     if (!await ConfirmActionAsync("确认删除游戏数据", warning)) return;
                 }
                 var categories = chosen.Select(entry => entry.Category).ToArray();
+                // 先清除内存中的令牌/设置回写机会，再开始删除：即使随后取消或失败，也不会在退出时把已删数据写回。
+                if (categories.Contains(WipeCategory.Accounts)) ClearSignedInAccounts();
+                if (categories.Contains(WipeCategory.Config)) SkipSettingsSaveOnClose = true;
                 await RunAsync(async token =>
                 {
                     var progress = new Progress<string>(message => _status.Text = message);
@@ -166,11 +169,6 @@ internal sealed partial class MainWindow
                     foreach (var item in result.Errors) AppendLog("删除失败：" + item);
                     AppendLog($"清空数据完成：释放 {AppDataWipe.FormatSize(result.FreedBytes)}，" +
                         $"删除 {result.Deleted.Count} 项，跳过 {result.Skipped.Count} 项，失败 {result.Errors.Count} 项。");
-                    // 令牌文件已经删除时同步清除内存中的登录状态，避免退出时 SaveSettings 又把令牌写回去。
-                    if (categories.Contains(WipeCategory.Accounts)) ClearSignedInAccounts();
-                    // 配置文件已删除时通知主窗口：关闭时不要再用内存中的设置写回 linux.json。
-                    if (categories.Contains(WipeCategory.Config) && !File.Exists(AppDataWipe.ConfigFilePath))
-                        SkipSettingsSaveOnClose = true;
                     await RefreshEntriesAsync();
                     await ShowWipeResultAsync(result);
                 });

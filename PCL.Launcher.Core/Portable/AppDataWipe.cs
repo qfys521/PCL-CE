@@ -279,6 +279,11 @@ public static class AppDataWipe
         try
         {
             if (!Directory.Exists(directory)) return;
+            if (new DirectoryInfo(directory).LinkTarget is not null)
+            {
+                context.Skipped.Add($"配置目录是符号链接，已保留：{directory}");
+                return;
+            }
             if (new DirectoryInfo(directory).EnumerateFileSystemInfos("*", SafeEnumeration).Any())
             {
                 context.Skipped.Add($"配置目录中还有其他内容（例如未勾选的账号令牌），已保留：{directory}");
