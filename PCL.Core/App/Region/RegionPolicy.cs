@@ -31,6 +31,19 @@ public static partial class RegionPolicy
         "PRC"
     };
 
+    /// <summary>
+    /// 区域限制是否在当前平台生效。区域限制是 Windows 客户端的历史行为；
+    /// Linux（PCL-CE-Linux）核心永远不启用区域限制，Minecraft 下载/补全/整合包安装保持可用。
+    /// </summary>
+    public static bool IsRestrictionSupported => OperatingSystem.IsWindows();
+
+    /// <summary>
+    /// 当前运行环境的区域判定。非 Windows 平台直接返回不受限，且不读取任何 Windows 区域 API。
+    /// </summary>
+    public static RegionAssessment AssessCurrent() => OperatingSystem.IsWindows()
+        ? Evaluate(ReadWindowsSignals())
+        : new RegionAssessment(RegionClassification.Other, "non-windows-unrestricted");
+
     public static RegionAssessment Evaluate(RegionSignals signals)
     {
         ArgumentNullException.ThrowIfNull(signals);
@@ -54,6 +67,21 @@ public static partial class RegionPolicy
 
     public static RegionSignals ReadWindowsSignals()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            // Linux 等非 Windows 平台没有 GetUserDefaultGeoName / GetUserGeoID：
+            // 明确返回“地理信息不可用”，Evaluate 因此永远不会判定为受限区域。
+            try
+            {
+                var localTimeZone = TimeZoneInfo.Local.Id;
+                return new RegionSignals(null, false, localTimeZone, !string.IsNullOrWhiteSpace(localTimeZone));
+            }
+            catch (Exception)
+            {
+                return new RegionSignals(null, false, null, false);
+            }
+        }
+
         var geoName = TryReadGeoName(out var geoAvailable);
         string? timeZone = null;
         var timeZoneAvailable = false;

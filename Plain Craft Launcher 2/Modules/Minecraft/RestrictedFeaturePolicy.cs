@@ -6,7 +6,7 @@ namespace PCL;
 
 internal static class RestrictedFeaturePolicy
 {
-    internal static RegionAssessment Assess() => RegionPolicy.Evaluate(RegionPolicy.ReadWindowsSignals());
+    internal static RegionAssessment Assess() => RegionPolicy.AssessCurrent();
 
     internal static bool IsRestricted => Assess().IsRestricted;
 

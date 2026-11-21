@@ -32,7 +32,18 @@ public interface IRestrictedFeatures
 
 public static class RestrictedFeatures
 {
-    public static IRestrictedFeatures? Current { get; set; }
+    private static IRestrictedFeatures? _current;
+
+    /// <summary>
+    /// 区域限制策略。Linux 便携核心没有任何 UI 会注册限制策略，默认也必须放行全部功能；
+    /// 仅在 Windows 桌面宿主显式注入策略时才启用限制。
+    /// </summary>
+    public static IRestrictedFeatures? Current
+    {
+        get => _current ?? (OperatingSystem.IsWindows() ? null : AllAllowedRestrictedFeatures.Instance);
+        set => _current = value;
+    }
+
     public static bool IsRestricted => Current?.IsRestricted ?? false;
 
     public static bool Check(string feature)
@@ -43,5 +54,19 @@ public static class RestrictedFeatures
     public static void ThrowIfRestricted(string feature)
     {
         Current?.ThrowIfRestricted(feature);
+    }
+
+    /// <summary>非 Windows 平台（PCL-CE-Linux）永远允许全部功能，区域限制不得阻断下载或启动。</summary>
+    private sealed class AllAllowedRestrictedFeatures : IRestrictedFeatures
+    {
+        public static readonly AllAllowedRestrictedFeatures Instance = new();
+
+        public bool IsRestricted => false;
+
+        public bool Check(string feature) => true;
+
+        public void ThrowIfRestricted(string feature)
+        {
+        }
     }
 }

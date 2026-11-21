@@ -149,7 +149,9 @@ public sealed class ModpackInstaller(LinuxGameLauncher launcher, HttpClient clie
                         throw new InvalidOperationException($"作者禁止了 {version.Name} 的第三方下载，请从 CurseForge 下载允许外部启动器使用的整合包。");
                     }
                     foreach (var asset in version.Files)
-                        await new VerifiedDownloads(client).FetchAsync(asset.Url, LinuxRules.ResolvePath(Path.Combine(stage, asset.Name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ? "mods" : "resourcepacks"), asset.Name), asset.Hash, token);
+                        await new VerifiedDownloads(client).FetchAsync(asset.Url,
+                            LocalMods.ResolveContentTarget(Path.Combine(stage, asset.Name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ? "mods" : "resourcepacks"), asset.Name),
+                            asset.Hash, token);
                 }
             }
             using (var archive = ZipFile.OpenRead(archivePath))

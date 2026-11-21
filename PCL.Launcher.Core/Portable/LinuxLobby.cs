@@ -38,18 +38,29 @@ public sealed class LinuxLobby(string toolDirectory, string machineId, HttpClien
         if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException();
         if (File.Exists(CorePath) && File.Exists(CliPath)) return;
         Directory.CreateDirectory(toolDirectory);
-        var archivePath = Path.Combine(toolDirectory, PackageName + ".zip");
-        progress?.Report("正在下载 Linux EasyTier 联机组件…");
-        await new VerifiedDownloads(client).FetchAsync($"https://github.com/EasyTier/EasyTier/releases/download/v{EasyTierVersion}/{PackageName}.zip", archivePath, PackageHash, token);
-        using var archive = ZipFile.OpenRead(archivePath);
-        var target = Path.Combine(toolDirectory, PackageName);
-        Directory.CreateDirectory(target);
-        foreach (var binary in new[] { "easytier-core", "easytier-cli" })
+        // 下载归档放在 XDG 缓存临时目录（而不是工具目录），解压成功或失败后都会删除，避免遗留 .zip。
+        var stage = LinuxPaths.CreateTempDirectory("easytier");
+        var archivePath = Path.Combine(stage, PackageName + ".zip");
+        try
         {
-            var entry = archive.Entries.Single(entry => entry.Name == binary);
-            var path = Path.Combine(target, binary);
-            entry.ExtractToFile(path, true);
-            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            progress?.Report("正在下载 Linux EasyTier 联机组件…");
+            await new VerifiedDownloads(client).FetchAsync($"https://github.com/EasyTier/EasyTier/releases/download/v{EasyTierVersion}/{PackageName}.zip", archivePath, PackageHash, token);
+            using var archive = ZipFile.OpenRead(archivePath);
+            var target = Path.Combine(toolDirectory, PackageName);
+            Directory.CreateDirectory(target);
+            foreach (var binary in new[] { "easytier-core", "easytier-cli" })
+            {
+                var entry = archive.Entries.Single(entry => entry.Name == binary);
+                var path = Path.Combine(target, binary);
+                entry.ExtractToFile(path, true);
+                File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
+        }
+        finally
+        {
+            try { if (Directory.Exists(stage)) Directory.Delete(stage, true); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
     }
 

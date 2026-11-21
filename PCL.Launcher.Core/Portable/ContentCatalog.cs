@@ -95,7 +95,9 @@ public sealed class ContentCatalog(HttpClient client, string? curseForgeKey = nu
         {
             if (!file.Name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase)) continue;
             progress?.Report($"正在下载模组：{file.Name}");
-            await new VerifiedDownloads(client).FetchAsync(file.Url, LinuxRules.ResolvePath(Path.Combine(instance, "mods"), file.Name), file.Hash, token);
+            // Linux 文件系统区分大小写：若已存在仅大小写不同的同名模组，复用它而不是再写一份。
+            var target = LocalMods.ResolveContentTarget(Path.Combine(instance, "mods"), file.Name);
+            await new VerifiedDownloads(client).FetchAsync(file.Url, target, file.Hash, token);
         }
     }
 
