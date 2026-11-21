@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -22,6 +23,105 @@ internal static class Program
 {
     private static SingleInstance? _singleInstance;
 
+    /// <summary>
+    /// 在 Avalonia/Skia 加载自带 HarfBuzz 之前，先用系统 fontconfig 建立字体缓存。
+    /// 首次运行时若在 Skia 已加载的情况下触发 fontconfig 建缓存，系统 HarfBuzz 与
+    /// SkiaSharp 自带 HarfBuzz 的符号会互相穿插，导致 glibc "free(): invalid pointer" 崩溃。
+    /// 该调用在 Skia 初始化之前完成，属于安全的独立 fontconfig 初始化。
+    /// </summary>
+    private static void PrewarmFontConfig()
+    {
+        try
+        {
+            var configFile = Environment.GetEnvironmentVariable("FONTCONFIG_FILE");
+            var cacheRoot = configFile is null
+                ? Path.Combine(Environment.GetEnvironmentVariable("XDG_CACHE_HOME") is { Length: > 0 } xdg ? xdg : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache"), "fontconfig")
+                : Path.Combine(Environment.GetEnvironmentVariable("XDG_CACHE_HOME") is { Length: > 0 } xdg2 ? xdg2 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache"), "pcl-ce", "fontconfig");
+            var cacheReady = Directory.Exists(cacheRoot) && Directory.EnumerateFiles(cacheRoot, "*.cache-*").Any();
+            if (cacheReady && configFile is not null && File.Exists(configFile))
+            {
+                // 配置或字体目录比缓存新时（例如 AppImage 升级、系统安装了新字体）重新生成缓存。
+                var cacheTime = Directory.GetLastWriteTimeUtc(cacheRoot);
+                cacheReady = File.GetLastWriteTimeUtc(configFile) <= cacheTime;
+            }
+            if (cacheReady) return;
+            // 子进程只运行 fontconfig，不会加载 Skia 自带的 HarfBuzz，因此不会发生符号冲突。
+            var start = new ProcessStartInfo("fc-cache")
+            {
+                UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            start.ArgumentList.Add("-f");
+            using var process = Process.Start(start);
+            if (process is not null)
+            {
+                _ = process.StandardOutput.ReadToEndAsync();
+                _ = process.StandardError.ReadToEndAsync();
+                if (process.WaitForExit(20000)) return;
+                try { process.Kill(true); } catch (Exception) { }
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("fc-cache 预热失败，尝试直接调用 fontconfig：" + ex.Message);
+        }
+        // 没有 fc-cache 时，直接通过 fontconfig 枚举字体以建立缓存（此时 Skia 尚未加载）。
+        try
+        {
+            var handle = NativeLibrary.Load("libfontconfig.so.1");
+            var init = Marshal.GetDelegateForFunctionPointer<FcInitDelegate>(NativeLibrary.GetExport(handle, "FcInit"));
+            if (!init()) return;
+            var getCurrent = Marshal.GetDelegateForFunctionPointer<FcConfigGetCurrentDelegate>(NativeLibrary.GetExport(handle, "FcConfigGetCurrent"));
+            var fontList = Marshal.GetDelegateForFunctionPointer<FcFontListDelegate>(NativeLibrary.GetExport(handle, "FcFontList"));
+            var patternCreate = Marshal.GetDelegateForFunctionPointer<FcPatternCreateDelegate>(NativeLibrary.GetExport(handle, "FcPatternCreate"));
+            var patternDestroy = Marshal.GetDelegateForFunctionPointer<FcPatternDestroyDelegate>(NativeLibrary.GetExport(handle, "FcPatternDestroy"));
+            var config = getCurrent();
+            var pattern = patternCreate();
+            if (config != IntPtr.Zero && pattern != IntPtr.Zero) _ = fontList(config, pattern, IntPtr.Zero);
+            if (pattern != IntPtr.Zero) patternDestroy(pattern);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("预建立字体缓存失败（可忽略）：" + ex.Message);
+        }
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate bool FcInitDelegate();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate IntPtr FcConfigGetCurrentDelegate();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate IntPtr FcConfigGetFontsDelegate(IntPtr config, int set);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate IntPtr FcFontListDelegate(IntPtr config, IntPtr pattern, IntPtr objectSet);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate IntPtr FcPatternCreateDelegate();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate void FcPatternDestroyDelegate(IntPtr pattern);
+
+    /// <summary>
+    /// 以 RTLD_GLOBAL 预加载 SkiaSharp 自带的 HarfBuzz。
+    /// 某些系统里 libfreetype 会加载系统 libharfbuzz.so.0，若 Skia 之后才加载自己的静态 HarfBuzz，
+    /// 两套 HarfBuzz 的符号会互相穿插，在首次建立字体缓存时触发 glibc 的
+    /// "free(): invalid pointer" 崩溃。先全局加载自带版本可以让所有调用都落在同一份实现上，
+    /// 且不会把 LD_PRELOAD 传播给 Java 等子进程。
+    /// </summary>
+    private static void PreloadHarfBuzz()
+    {
+        if (!OperatingSystem.IsLinux()) return;
+        var path = Path.Combine(AppContext.BaseDirectory, "libHarfBuzzSharp.so");
+        if (!File.Exists(path)) return;
+        try
+        {
+            var handle = NativeLibrary.Load("libdl.so.2");
+            var open = Marshal.GetDelegateForFunctionPointer<DlOpenDelegate>(NativeLibrary.GetExport(handle, "dlopen"));
+            // RTLD_NOW = 2, RTLD_GLOBAL = 0x100
+            if (open(path, 0x102) == IntPtr.Zero)
+                AppLog.Warn("预加载 HarfBuzz 失败，将继续启动。");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("预加载 HarfBuzz 失败（可忽略）：" + ex.Message);
+        }
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate IntPtr DlOpenDelegate([MarshalAs(UnmanagedType.LPUTF8Str)] string fileName, int flags);
+
     [STAThread]
     public static int Main(string[] args)
     {
@@ -35,6 +135,11 @@ internal static class Program
             LinuxPaths.EnsureDirectories();
             AppLog.Initialize();
             AppLog.Info(VersionText + " 启动，参数：" + string.Join(' ', args.Select(Quote)));
+            if (!HasFlag(args, "--version") && !HasFlag(args, "--help"))
+            {
+                PreloadHarfBuzz();
+                PrewarmFontConfig();
+            }
             AppDomain.CurrentDomain.UnhandledException += (_, e) =>
                 AppLog.Error("未处理的异常", e.ExceptionObject as Exception);
             TaskScheduler.UnobservedTaskException += (_, e) =>
@@ -121,8 +226,12 @@ internal static class Program
             .UsePlatformDetect()
             .With(new FontManagerOptions
             {
-                // 中文兜底：系统字体缺失时也能显示中文，避免豆腐块。
-                DefaultFamilyName = LinuxFonts.Resolve(settings.InterfaceFont)
+                // 原版使用内置 PCL English 字体显示拉丁字母与数字，中文回退到系统中文字体。
+                DefaultFamilyName = string.IsNullOrWhiteSpace(settings.InterfaceFont) ? "PCL English" : settings.InterfaceFont,
+                FontFamilyMappings = new Dictionary<string, FontFamily>
+                {
+                    ["PCL English"] = new FontFamily("avares://PCL-CE/Assets/Fonts#PCL English")
+                }
             })
             .With(new X11PlatformOptions
             {

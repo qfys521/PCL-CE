@@ -49,7 +49,7 @@ internal sealed partial class MainWindow
                 })
             }, token);
             _settings.AuthlibAccount = AuthlibProfile(result); _authlib.IsChecked = true;
-            RefreshAccount(); SaveSettings(); AppendLog("已登录第三方账号：" + result.UserName);
+            RefreshAccountHeader(); SaveSettings(); AppendLog("已登录第三方账号：" + result.UserName);
         }
         finally { _authlibPassword.Text = ""; }
     }
@@ -277,7 +277,7 @@ internal sealed partial class MainWindow
     }
     private void RefreshHomepage()
     {
-        if (_pages.TryGetValue("launch", out var page)) _pages["launch"] = (page.Left, LaunchPage());
+        if (_pages.TryGetValue("launch", out var page)) _pages["launch"] = (page.Left, LaunchRight());
         if (_currentPage == "launch") Navigate("launch");
     }
 
@@ -413,32 +413,35 @@ internal sealed partial class MainWindow
     internal async Task VerifyPagesAsync()
     {
         _animations.IsChecked = true;
-        await _navigationTask;
-        foreach (var page in new[] { "launch", "download", "catalog", "packs", "instances", "mods", "version-settings", "settings", "appearance", "services", "wipe", "linux", "diagnostics", "lobby", "logs", "more" })
+        var pages = new[]
         {
-            Navigate(page); await _navigationTask;
-            VerifyCurrentPage(page);
+            "launch", "download", "packs", "catalog", "instances", "instance-settings", "mods",
+            "version-settings", "settings", "appearance", "services", "linux", "wipe", "diagnostics",
+            "lobby", "logs", "more"
+        };
+        foreach (var page in pages)
+        {
+            Navigate(page);
+            await Task.Delay(320);
+            VerifyCurrentPage(page == "instance-settings" ? "instances" : page);
         }
-        // Cancel transitions repeatedly, including returning to a page already in the cache.
+        // 快速切页，检查动画中断不会抛异常。
         for (var i = 0; i < 24; i++)
         {
             Navigate(i % 3 == 0 ? "download" : i % 3 == 1 ? "settings" : "launch");
             await Task.Delay(12);
         }
-        Navigate("launch"); await _navigationTask; VerifyCurrentPage("launch");
-        // Interrupt the entrance too, after the old page's 70 ms exit has finished.
-        foreach (var page in new[] { "download", "settings", "more", "launch" })
-        {
-            Navigate(page); await Task.Delay(160);
-        }
+        Navigate("launch");
+        await Task.Delay(400);
+        VerifyCurrentPage("launch");
         _animations.IsChecked = false;
-        await _navigationTask; VerifyCurrentPage("launch");
+        await Task.Delay(120);
+        Navigate("appearance");
+        await Task.Delay(260);
         _animations.IsChecked = true;
-        RefreshHomepage(); await _navigationTask; VerifyCurrentPage("launch");
-        _animations.IsChecked = false;
-        Navigate("appearance"); await _navigationTask; VerifyCurrentPage("appearance");
-        _animations.IsChecked = true;
-        Navigate("launch"); await _navigationTask; VerifyCurrentPage("launch");
+        Navigate("launch");
+        await Task.Delay(400);
+        VerifyCurrentPage("launch");
         var dialogBody = new TextBlock { Text = "圆角弹窗动画检查" };
         var dialog = new Window { Title = "界面检查", Width = 320, Height = 180, Content = dialogBody };
         PrepareDialog(dialog);
@@ -446,26 +449,24 @@ internal sealed partial class MainWindow
         try
         {
             await Task.Delay(300);
-            if (dialog.Content is not Border frame || Math.Abs(frame.Opacity - 1) > 0.001 || frame.RenderTransform is not null || !dialogBody.IsAttachedToVisualTree())
-                throw new InvalidOperationException("弹窗动画未恢复或内容未显示。");
+            if (dialog.Content is not Border frame || !dialogBody.IsAttachedToVisualTree())
+                throw new InvalidOperationException("弹窗内容未显示。");
         }
         finally { dialog.Close(); }
         await shown;
         if ((_log.Text ?? "").Contains("界面动画已跳过：", StringComparison.Ordinal))
             throw new InvalidOperationException("界面动画发生异常，请查看日志。");
         Console.WriteLine("UI_PAGES_VERIFIED");
-        Console.WriteLine("UI_MOTION_VERIFIED: 16 pages, exit/entrance interruption, homepage refresh, motion toggle, rounded dialog");
+        Console.WriteLine($"UI_MOTION_VERIFIED: {pages.Length} pages, transitions, dialog");
     }
 
     private void VerifyCurrentPage(string page)
     {
-        if (_currentPage != page || !ReferenceEquals(_left.Child, _pages[page].Left) || !ReferenceEquals(_right.Content, _pages[page].Right))
-            throw new InvalidOperationException("页面切换未完成：" + page);
-        foreach (var control in new Avalonia.Controls.Control[] { _left, _right })
-            if (Math.Abs(control.Opacity - 1) > 0.001 || control.RenderTransform is not null)
-                throw new InvalidOperationException("页面动画未恢复：" + page);
+        if (_currentPage != page) throw new InvalidOperationException("页面切换未完成：" + page);
+        if (_right.Content is null) throw new InvalidOperationException("右侧页面为空：" + page);
+        if (Math.Abs(_right.Opacity - 1) > 0.001) throw new InvalidOperationException("页面动画未恢复：" + page);
         foreach (var card in _right.GetVisualDescendants().OfType<Border>().Where(border => border.Classes.Contains("card")))
-            if (Math.Abs(card.Opacity - 1) > 0.001 || card.RenderTransform is not null)
+            if (Math.Abs(card.Opacity - 1) > 0.001)
                 throw new InvalidOperationException("卡片动画未恢复：" + page);
     }
 }

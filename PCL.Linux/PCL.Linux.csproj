@@ -22,6 +22,10 @@
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
         <ProjectReference Include="../PCL.Launcher.Core/PCL.Launcher.Core.csproj" />
         <EmbeddedResource Include="../Plain Craft Launcher 2/metadata.json" LogicalName="PCL.metadata.json" />
+        <!-- 原版 lucide 图标资源（与 PCL CE 完全一致） -->
+        <EmbeddedResource Include="Assets/Icons/Lucide/*.svg" LogicalName="PCL.Icons.%(Filename)%(Extension)" />
+        <!-- 原版 PCL English 字体（UI 拉丁字母与数字的圆体） -->
+        <AvaloniaResource Include="Assets/Fonts/PCLEnglish.ttf" />
         <Content Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="../PCL.Launcher.Core/LICENCE" Link="LICENCE-launcher" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="README.md" CopyToOutputDirectory="PreserveNewest" />

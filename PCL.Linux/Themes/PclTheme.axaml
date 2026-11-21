@@ -1,197 +1,419 @@
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pcl="using:PCL.Linux">
+    <!--
+        PCL-CE-Linux 主题：所有颜色由 PclColors（原版 OKLCH 配色系统）在运行时写入应用资源，
+        这里的数值对应原版 PCL CE 的 WPF 控件度量（窗口 850×500、标题栏 48、菜单项 36、卡片圆角 5、
+        按钮高 35 圆角 3、输入框高 28、顶部标签高 27 圆角 13.5 等）。
+    -->
     <Styles.Resources>
-        <SolidColorBrush x:Key="PclAccent">#147AD6</SolidColorBrush>
-        <SolidColorBrush x:Key="PclAccentHover">#308ADB</SolidColorBrush>
-        <SolidColorBrush x:Key="PclAccentPressed">#1168B6</SolidColorBrush>
-        <SolidColorBrush x:Key="PclHover">#14147AD6</SolidColorBrush>
-        <SolidColorBrush x:Key="PclPage">#F3F4F5</SolidColorBrush>
-        <SolidColorBrush x:Key="PclSurface">White</SolidColorBrush>
-        <SolidColorBrush x:Key="PclSidebar">#FAFAFA</SolidColorBrush>
-        <SolidColorBrush x:Key="PclText">#30343B</SolidColorBrush>
-        <SolidColorBrush x:Key="PclMuted">#7B818A</SolidColorBrush>
-        <SolidColorBrush x:Key="PclLine">#DAE1E8</SolidColorBrush>
-        <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
-        <CornerRadius x:Key="OverlayCornerRadius">8</CornerRadius>
+        <BoxShadows x:Key="PclCardShadow">0 1 5 0 #20343D4A</BoxShadows>
+        <BoxShadows x:Key="PclCardShadowHover">0 2 8 0 #50343D4A</BoxShadows>
+        <BoxShadows x:Key="PclWindowShadow">0 4 16 0 #30000000</BoxShadows>
     </Styles.Resources>
+
+    <!-- ===================== 基础 ===================== -->
     <Style Selector="Window">
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="Foreground" Value="{DynamicResource PclText}" />
-        <Setter Property="Background" Value="{DynamicResource PclPage}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="Background" Value="Transparent" />
     </Style>
-    <Style Selector="Button.pcl">
-        <Setter Property="Foreground" Value="{DynamicResource PclAccent}" />
-        <Setter Property="Background" Value="{DynamicResource PclSurface}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource PclAccent}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="12,7" />
+
+    <Style Selector="TextBlock">
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="MinHeight" Value="32" />
-        <Setter Property="RenderTransformOrigin" Value="50%,50%" />
-        <Setter Property="RenderTransform" Value="scale(1)" />
-        <Setter Property="Template">
-            <ControlTemplate>
-                <Grid>
-                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
-                        <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          Padding="{TemplateBinding Padding}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-                    </Border>
-                    <Border Name="FocusRing" BorderBrush="{DynamicResource PclAccent}" BorderThickness="2"
-                            CornerRadius="9" Margin="-3" Opacity="0" IsHitTestVisible="False" />
-                </Grid>
-            </ControlTemplate>
-        </Setter>
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
-    <Style Selector="Window.motion Button.pcl">
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.15" />
-                <BrushTransition Property="Foreground" Duration="0:0:0.15" />
-                <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
-                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
-                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" Easing="CubicEaseOut" />
-            </Transitions>
-        </Setter>
-    </Style>
-    <Style Selector="Button.pcl:pointerover">
-        <Setter Property="Background" Value="{DynamicResource PclHover}" />
-        <Setter Property="RenderTransform" Value="scale(1.015)" />
-    </Style>
-    <Style Selector="Button.pcl:pressed">
-        <Setter Property="RenderTransform" Value="scale(0.955)" />
-    </Style>
-    <Style Selector="Window.motion Button.pcl:pressed">
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.08" />
-                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.08" Easing="CubicEaseOut" />
-            </Transitions>
-        </Setter>
-    </Style>
-    <Style Selector="Button.pcl:disabled">
-        <Setter Property="Opacity" Value="0.4" />
-        <Setter Property="RenderTransform" Value="scale(1)" />
-    </Style>
-    <Style Selector="Button.pcl:focus-visible /template/ Border#FocusRing">
-        <Setter Property="Opacity" Value="0.4" />
-    </Style>
-    <Style Selector="Window.motion Button.pcl /template/ Border#FocusRing">
-        <Setter Property="Transitions"><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.12" /></Transitions></Setter>
-    </Style>
-    <Style Selector="Button.primary">
-        <Setter Property="Background" Value="{DynamicResource PclAccent}" />
-        <Setter Property="Foreground" Value="White" />
-        <Setter Property="CornerRadius" Value="8" />
-    </Style>
-    <Style Selector="Button.primary:pointerover">
-        <Setter Property="Background" Value="{DynamicResource PclAccentHover}" />
-    </Style>
-    <Style Selector="Button.primary:pressed">
-        <Setter Property="Background" Value="{DynamicResource PclAccentPressed}" />
-    </Style>
-    <Style Selector="Button.nav">
-        <Setter Property="Foreground" Value="White" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="13,6" />
-        <Setter Property="CornerRadius" Value="7" />
-    </Style>
-    <Style Selector="Button.nav:pointerover">
-        <Setter Property="Background" Value="#20FFFFFF" />
-    </Style>
-    <Style Selector="Button.nav.selected">
-        <Setter Property="Background" Value="Transparent" />
-    </Style>
-    <Style Selector="Button.nav.close:pointerover">
-        <Setter Property="Background" Value="#E04B50" />
-    </Style>
-    <Style Selector="Button.dialog-close:pointerover">
-        <Setter Property="Background" Value="#E04B50" />
-        <Setter Property="Foreground" Value="White" />
-    </Style>
-    <Style Selector="Button.sidebar">
-        <Setter Property="Height" Value="44" />
-        <Setter Property="Margin" Value="8,0" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{DynamicResource PclText}" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="HorizontalContentAlignment" Value="Left" />
-        <Setter Property="Padding" Value="15,10" />
-    </Style>
-    <Style Selector="Button.sidebar:pointerover, Button.sidebar.selected">
-        <Setter Property="Background" Value="{DynamicResource PclHover}" />
-        <Setter Property="Foreground" Value="{DynamicResource PclAccent}" />
-    </Style>
-    <Style Selector="Button.sidebar:pointerover">
-        <Setter Property="RenderTransform" Value="translate(3px,0)" />
-    </Style>
-    <Style Selector="Button.sidebar:pressed">
-        <Setter Property="RenderTransform" Value="translate(2px,0) scale(0.985)" />
-    </Style>
-    <Style Selector="Border.card">
-        <Setter Property="Background" Value="{DynamicResource PclSurface}" />
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Padding" Value="20,17" />
-        <Setter Property="Margin" Value="0,0,0,15" />
-        <Setter Property="BoxShadow" Value="0 2 7 0 #10000000" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="#08000000" />
-    </Style>
-    <Style Selector="Window.motion Border.card">
-        <Setter Property="Transitions"><Transitions>
-            <BrushTransition Property="Background" Duration="0:0:0.18" />
-            <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
-        </Transitions></Setter>
-    </Style>
-    <Style Selector="Border.card:pointerover">
-        <Setter Property="BoxShadow" Value="0 4 12 0 #18000000" />
-    </Style>
-    <Style Selector="TextBox, ComboBox, NumericUpDown">
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="MinHeight" Value="34" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="BorderBrush" Value="{DynamicResource PclLine}" />
-    </Style>
-    <Style Selector="Window.motion TextBox, Window.motion ComboBox, Window.motion NumericUpDown">
-        <Setter Property="Transitions"><Transitions>
-            <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
-            <BrushTransition Property="Background" Duration="0:0:0.16" />
-        </Transitions></Setter>
-    </Style>
-    <Style Selector="TextBox:pointerover, ComboBox:pointerover, NumericUpDown:pointerover">
-        <Setter Property="BorderBrush" Value="{DynamicResource PclAccentHover}" />
-    </Style>
-    <Style Selector="TextBox:focus-within, ComboBox:focus-within, NumericUpDown:focus-within">
-        <Setter Property="BorderBrush" Value="{DynamicResource PclAccent}" />
-    </Style>
-    <Style Selector="ListBox">
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="BorderBrush" Value="{DynamicResource PclLine}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="4" />
-    </Style>
-    <Style Selector="ListBoxItem, ComboBoxItem">
-        <Setter Property="CornerRadius" Value="5" />
-        <Setter Property="Padding" Value="10,8" />
-        <Setter Property="Margin" Value="2" />
-    </Style>
-    <Style Selector="Window.motion ListBoxItem, Window.motion ComboBoxItem, Window.motion CheckBox">
-        <Setter Property="Transitions"><Transitions>
-            <BrushTransition Property="Background" Duration="0:0:0.13" />
-            <BrushTransition Property="Foreground" Duration="0:0:0.13" />
-        </Transitions></Setter>
-    </Style>
-    <Style Selector="ListBoxItem:pointerover, ComboBoxItem:pointerover, ListBoxItem:selected, ComboBoxItem:selected">
-        <Setter Property="Background" Value="{DynamicResource PclHover}" />
-    </Style>
-    <Style Selector="ListBoxItem:selected, ComboBoxItem:selected, CheckBox:checked">
-        <Setter Property="Foreground" Value="{DynamicResource PclAccent}" />
+    <Style Selector="TextBlock.wrap">
+        <Setter Property="TextTrimming" Value="None" />
+        <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.muted">
-        <Setter Property="Foreground" Value="{DynamicResource PclMuted}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+    <Style Selector="TextBlock.section">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+    <Style Selector="TextBlock.title">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="TextBlock.value">
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TextBlock.mono">
+        <Setter Property="FontFamily" Value="Consolas, DejaVu Sans Mono, monospace" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <!-- ===================== 卡片 ===================== -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushTransparentBackground}" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="BoxShadow" Value="{StaticResource PclCardShadow}" />
+    </Style>
+    <Style Selector="Border.card:pointerover">
+        <Setter Property="BoxShadow" Value="{StaticResource PclCardShadowHover}" />
+    </Style>
+    <Style Selector="Border.hint">
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="Padding" Value="12,9" />
+    </Style>
+    <Style Selector="Border.separator">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray6}" />
+    </Style>
+
+    <!-- ===================== 按钮（MyButton 风格：描边、白底、圆角 3、高 35） ===================== -->
+    <Style Selector="Button.pcl">
+        <Setter Property="Height" Value="35" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="13,0" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushHalfWhite}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.pcl:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrush7}" />
+    </Style>
+    <Style Selector="Button.pcl:pressed">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush6}" />
+        <Setter Property="RenderTransform" Value="scale(0.955)" />
+        <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    </Style>
+    <Style Selector="Button.pcl:disabled">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushTransparent}" />
+    </Style>
+
+    <!-- 强调按钮：文字/边框为深一点的强调色 -->
+    <Style Selector="Button.pcl.primary">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush2}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+    </Style>
+    <Style Selector="Button.pcl.primary:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+
+    <Style Selector="Button.pcl.red">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushRedDark}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushRedDark}" />
+    </Style>
+    <Style Selector="Button.pcl.red:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushRedLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushRedLight}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushRedBack}" />
+    </Style>
+
+    <!-- 纯文字按钮 -->
+    <Style Selector="Button.pcl.flat">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.flat:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg1}" />
+    </Style>
+
+    <!-- 圆形图标按钮 -->
+    <Style Selector="Button.pcl.icon">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="1000" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushSemiTransparent}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+    <Style Selector="Button.pcl.icon:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg1}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.icon.white">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+    <Style Selector="Button.pcl.icon.white:pointerover">
+        <Setter Property="Background" Value="#33FFFFFF" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+
+    <!-- 顶部标签（MyRadioButton，高 27、圆角 13.5、白色文字；选中为白色胶囊 + 蓝色文字） -->
+    <Style Selector="Button.pcl.tab">
+        <Setter Property="Height" Value="27" />
+        <Setter Property="MinHeight" Value="27" />
+        <Setter Property="MaxHeight" Value="27" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="CornerRadius" Value="13.5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushSemiTransparent}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.pcl.tab:pointerover">
+        <Setter Property="Background" Value="#55FFFFFF" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+    <Style Selector="Button.pcl.tab.selected">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushWhite}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.tab.selected:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushWhite}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+
+    <!-- 胶囊按钮（MyIconTextButton，高 27、圆角 13.5） -->
+    <Style Selector="Button.pcl.pill">
+        <Setter Property="Height" Value="27" />
+        <Setter Property="MinHeight" Value="27" />
+        <Setter Property="MaxHeight" Value="27" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="CornerRadius" Value="13.5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush6}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushHalfWhite}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+    <Style Selector="Button.pcl.pill:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg1}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush6}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.pill.selected">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+
+    <!-- 大按钮（MyExtraTextButton：高 52、胶囊 21、强调色填充、白字 16） -->
+    <Style Selector="Button.pcl.large">
+        <Setter Property="Height" Value="52" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="30,0" />
+        <Setter Property="CornerRadius" Value="21" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.pcl.large:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush4}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+    <Style Selector="Button.pcl.large:disabled">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+
+    <!-- 左侧菜单项（MyListItem：高 36、图标列 34、文字 14、选中蓝字 + 左侧 5×20 指示条） -->
+    <Style Selector="Button.pcl.menuitem">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.pcl.menuitem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg1}" />
+    </Style>
+    <Style Selector="Button.pcl.menuitem TextBlock.menutext">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+    <Style Selector="Button.pcl.menuitem pcl|SvgIcon">
+        <Setter Property="IconBrush" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+    <Style Selector="Button.pcl.menuitem.selected TextBlock.menutext">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.menuitem.selected pcl|SvgIcon">
+        <Setter Property="IconBrush" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.menuitem pcl|SvgIcon">
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+    </Style>
+
+    <!-- 顶部标签内部图标/文字：未选中白色，选中蓝字 -->
+    <Style Selector="Button.pcl.tab pcl|SvgIcon.tabicon">
+        <Setter Property="IconBrush" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+    <Style Selector="Button.pcl.tab TextBlock.tabtext">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.pcl.tab.selected pcl|SvgIcon.tabicon">
+        <Setter Property="IconBrush" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.pcl.tab.selected TextBlock.tabtext">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+
+    <!-- 卡片标题悬停变深 -->
+    <Style Selector="Border.card:pointerover TextBlock.title">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+    </Style>
+
+    <!-- ===================== 输入控件 ===================== -->
+    <Style Selector="TextBox">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="7,0" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushBg0}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushHalfWhite}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox:focus">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="TextBox:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush4}" />
+    </Style>
+    <Style Selector="TextBox.mono">
+        <Setter Property="FontFamily" Value="Consolas, DejaVu Sans Mono, monospace" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="Height" Value="NaN" />
+        <Setter Property="MinHeight" Value="80" />
+    </Style>
+
+    <Style Selector="ComboBox">
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushBg0}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushHalfWhite}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ComboBox:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush4}" />
+    </Style>
+    <Style Selector="ComboBox:focus">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+
+    <!-- 搜索框（MySearchBox：高 40 卡片 + 13.5 字号） -->
+    <Style Selector="Border.search">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushTransparentBackground}" />
+        <Setter Property="BoxShadow" Value="{StaticResource PclCardShadow}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Border.search TextBox">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="Padding" Value="32,0,40,0" />
+    </Style>
+
+    <Style Selector="CheckBox">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="MinHeight" Value="22" />
+        <Setter Property="CornerRadius" Value="3" />
+    </Style>
+    <Style Selector="RadioButton">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+
+    <Style Selector="ProgressBar">
+        <Setter Property="Height" Value="4" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrush6}" />
+    </Style>
+
+    <!-- ===================== 列表 ===================== -->
+    <Style Selector="ListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBoxItem:selected">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <!-- 42 像素列表行（原版 MyListItem 行高 42：名称 14、副标题 12 @0.6、类型标签） -->
+    <Style Selector="ListBoxItem Border.row">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover Border.row">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg1}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected Border.row">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush7}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected TextBlock.rowTitle">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+    </Style>
+    <Style Selector="TextBlock.rowTitle">
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.rowInfo">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+
+    <Style Selector="ScrollViewer">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style Selector="ToolTip">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushToolTip}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray5}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="7,4" />
     </Style>
 </Styles>

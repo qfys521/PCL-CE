@@ -74,21 +74,15 @@ internal sealed partial class MainWindow
     private void AddLaunchWarning(string text)
     {
         if (!_pages.TryGetValue("launch", out var page)) return;
-        var host = page.Right is ScrollViewer { Content: StackPanel stack } ? stack : null;
-        if (host is null) return;
+        if (page.Right is not ScrollViewer { Content: StackPanel outer } ||
+            outer.Children.FirstOrDefault() is not StackPanel stack) return;
         var card = Card("运行环境提示", Paragraph(text),
-            Actions(NavigationButton("系统信息", () => Navigate("diagnostics"), "pcl")));
-        if (host.Children.Count > 0) host.Children.Insert(0, card); else host.Children.Add(card);
+            Actions(NavigationButton("系统信息", () => PushPage("diagnostics"), "pcl")));
+        if (stack.Children.Count > 0) stack.Children.Insert(0, card); else stack.Children.Add(card);
         _pages["launch"] = (page.Left, page.Right);
         if (_currentPage == "launch") Navigate("launch");
     }
 
-    /// <summary>窗口装饰是否使用系统原生标题栏（Linux 适配；可在设置中切换回应用内标题栏）。</summary>
-    private void ApplyWindowDecorations()
-    {
-        SystemDecorations = SystemDecorations.Full;
-        TransparencyLevelHint = [];
-    }
 }
 
 /// <summary>Linux 字体检测：没有内置字体时也不会出现豆腐块（内置/系统 Noto Sans CJK 兜底）。</summary>
@@ -97,13 +91,17 @@ public static class LinuxFonts
     public const string Bundled = "Noto Sans CJK SC";
     private static string? _system;
 
-    /// <summary>返回 Avalonia 字体回退列表：<c>系统字体, Noto Sans CJK SC, Noto Sans SC, sans-serif</c>。</summary>
+    /// <summary>
+    /// 返回 Avalonia 字体回退列表：<c>PCL English, Noto Sans CJK SC, sans-serif</c>。
+    /// 注意：不要在这里调用 fc-match 等外部字体进程——首次运行（fontconfig 缓存尚未建立）时，
+    /// 子进程与 Avalonia 同时初始化 fontconfig 缓存会发生竞争并导致进程崩溃。
+    /// 系统字体由 fontconfig 的 <c>sans-serif</c> 别名与逐字回退自动解析。
+    /// </summary>
     public static string Resolve(string configured)
     {
-        var fallbacks = new[] { Bundled, "Noto Sans SC", "Noto Sans CJK TC", "WenQuanYi Micro Hei", "sans-serif" };
-        var primary = !string.IsNullOrWhiteSpace(configured) ? configured.Trim() : DetectSystemFont();
+        var fallbacks = new[] { "PCL English", Bundled, "Noto Sans SC", "Noto Sans CJK TC", "WenQuanYi Micro Hei", "sans-serif" };
         var all = new List<string>();
-        if (!string.IsNullOrWhiteSpace(primary)) all.Add(primary);
+        if (!string.IsNullOrWhiteSpace(configured)) all.Add(configured.Trim());
         foreach (var fallback in fallbacks)
             if (!all.Contains(fallback, StringComparer.OrdinalIgnoreCase)) all.Add(fallback);
         return string.Join(", ", all);

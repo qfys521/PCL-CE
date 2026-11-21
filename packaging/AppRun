@@ -27,11 +27,55 @@ fi
 
 # --- bundled fonts ---------------------------------------------------------
 # Noto Sans CJK SC (Regular/Bold) is shipped inside the AppImage so Chinese
-# text renders even on hosts without any CJK font installed.  Fontconfig also
-# scans the host font directories; its cache is redirected to
-# $XDG_CACHE_HOME/pcl-ce/fontconfig by the bundled fonts.conf.
-if [ -f "$APPDIR/usr/etc/fonts/fonts.conf" ]; then
-    export FONTCONFIG_FILE="$APPDIR/usr/etc/fonts/fonts.conf"
+# text renders even on hosts without any CJK font installed.
+#
+# The AppImage mount path changes on every launch, so pointing FONTCONFIG_FILE
+# directly at $APPDIR would rebuild the fontconfig cache every launch.  On some
+# systems that rebuild races with SkiaSharp's bundled HarfBuzz and aborts the
+# process ("free(): invalid pointer").  Copy the fonts once to a stable
+# per-user directory and generate a stable fonts.conf there.
+cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
+app_cache="$cache_home/pcl-ce"
+mkdir -p "$app_cache"
+
+app_version=$(sed -n 's/^PCL-CE-Linux \([0-9][0-9.]*\).*/\1/p' \
+    "$APPDIR/usr/share/doc/pcl-ce/BUILD-INFO.txt" 2>/dev/null | head -n 1 || true)
+[ -n "${app_version:-}" ] || app_version=1.0.0
+font_dir="$app_cache/bundled-fonts-$app_version"
+font_conf="$app_cache/fonts-$app_version.conf"
+
+if [ ! -d "$font_dir" ] || [ -z "$(ls -A "$font_dir" 2>/dev/null)" ]; then
+    rm -rf "$font_dir"
+    mkdir -p "$font_dir"
+    cp -f "$APPDIR/usr/share/fonts/opentype/noto-cjk/"*.otf "$font_dir"/ 2>/dev/null || true
+fi
+
+if [ ! -f "$font_conf" ]; then
+    {
+        echo '<?xml version="1.0"?>'
+        echo '<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">'
+        echo '<fontconfig>'
+        echo "  <dir>$font_dir</dir>"
+        echo '  <dir>~/.fonts</dir>'
+        echo '  <dir prefix="xdg">fonts</dir>'
+        echo '  <dir>/usr/local/share/fonts</dir>'
+        echo '  <dir>/usr/share/fonts</dir>'
+        echo '  <cachedir prefix="xdg">pcl-ce/fontconfig</cachedir>'
+        echo '  <include ignore_missing="yes">/etc/fonts/conf.d</include>'
+        echo '</fontconfig>'
+    } > "$font_conf"
+fi
+export FONTCONFIG_FILE="$font_conf"
+
+# Build the fontconfig cache once, in a separate process: never inside the
+# launcher where SkiaSharp's HarfBuzz is already loaded.  The launcher performs
+# the same prewarm through fontconfig directly if fc-cache is unavailable.
+font_cache="$cache_home/pcl-ce/fontconfig"
+if [ ! -d "$font_cache" ] || [ -z "$(ls -A "$font_cache" 2>/dev/null)" ] \
+   || [ -n "$(find /usr/share/fonts /usr/local/share/fonts -newer "$font_cache" -print -quit 2>/dev/null)" ]; then
+    if command -v fc-cache >/dev/null 2>&1; then
+        fc-cache -f >/dev/null 2>&1 || true
+    fi
 fi
 
 # --- bundled icon theme / desktop metadata --------------------------------

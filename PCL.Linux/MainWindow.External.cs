@@ -182,7 +182,7 @@ internal sealed partial class MainWindow
     {
         var target = Path.GetFullPath(directory);
         Directory.CreateDirectory(target);
-        await _navigationTask;
+        await Task.Delay(200);
         await Task.Delay(600);
         var originalTheme = RequestedThemeVariant;
         var originalSetting = _settings.Theme;
@@ -206,17 +206,17 @@ internal sealed partial class MainWindow
             // 逐页截图，便于人工核对新页面（Linux 集成、数据清理、系统信息）。
             _settings.Theme = "light";
             ApplyAppearance();
-            foreach (var page in new[] { "download", "settings", "linux", "wipe", "diagnostics", "more" })
+            foreach (var page in new[] { "instances", "download", "catalog", "mods", "version-settings", "settings", "appearance", "linux", "wipe", "diagnostics", "more" })
             {
                 Navigate(page);
-                await _navigationTask;
+                await Task.Delay(200);
                 await Task.Delay(250);
                 var path = Path.Combine(target, $"page-{page}.png");
                 CaptureTo(path, 1.0);
                 Console.WriteLine("SCREENSHOT: " + path);
             }
             Navigate("launch");
-            await _navigationTask;
+            await Task.Delay(200);
         }
         finally
         {

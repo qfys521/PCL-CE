@@ -6,6 +6,24 @@ WPF 本身仍只适用于 Windows；Linux 界面是原有设计的原生实现�
 
 发布产物是单一的 `PCL-CE-Linux-1.0.0-x86_64.AppImage`：自带 .NET 10 运行时、中文字体与图标主题，目标机无需安装 .NET、Mono 或 Wine。
 
+## 界面（对齐 Windows 版）
+
+Linux 版按 Windows 版 PCL CE 的 WPF 界面重建，而不是另做一套设计：
+
+- 窗口默认 **900×550**（最小 810×470），10 像素外边距、6 像素圆角、阴影；**48 像素标题栏**，
+  左侧为 PCL 手绘 Logo + 白色 CE 徽标（可在个性化中切换为文本 Logo），中间是 启动 / 下载 / 设置 / 工具
+  四个胶囊标签（lucide 图标 + 白色文字，选中为白色胶囊 + 蓝色文字），右侧是原版的最小化与关闭按钮。
+- 左侧栏宽度与原版一致：启动页 300，下载 / 设置 / 工具 152；子页面显示“返回箭头 + 页面标题”的内层标题栏。
+- 内容区使用原版**卡片（圆角 5、40 像素标题带、折叠箭头、悬停阴影）**、**42 像素列表行**、
+  **35 像素描边按钮**、28 像素输入框/下拉框、52 像素大按钮、3 像素左边框提示条与顶部胶囊标签。
+- 配色使用原版 **OKLCH 配色系统**（ToneProfile + 主题色），不是写死的近似色：默认“猫蓝”，
+  另提供天蓝 / 崩蓝 / HMCL 蓝，支持浅色 / 深色 / 跟随系统；默认“彩色背景”渐变与原版公式一致。
+- 字体：内置原版 **PCL English** 字体显示拉丁字母与数字，中文回退到系统 Noto Sans CJK（AppImage 内置）；
+  界面尺寸按 WPF 设备无关像素 1:1 换算。
+- 图标直接使用仓库内原版 **lucide SVG 图标资源**（87 个），并用原版页面切换/卡片进入动画节奏
+  （右侧 −16→0 淡入、25ms 逐卡片错峰；左侧 −25→0；退出 70ms）。
+- 窗口装饰默认为原版自绘标题栏；在“设置 → 个性化 → 窗口与标题栏”可切换为系统窗口装饰（GTK/KDE CSD）。
+
 ## 已实现
 
 - Mojang 正式版、快照及旧版列表，客户端下载、依赖 / 资源校验、Linux 原生库和日志。
@@ -28,11 +46,15 @@ WPF 本身仍只适用于 Windows；Linux 界面是原有设计的原生实现�
 
 ## 界面预览
 
-| 启动页（浅色） | 设置 / 数据清理 | 系统诊断 |
+| 启动页（浅色） | 游戏下载 | 深色主题 |
 | --- | --- | --- |
-| ![启动页](../docs/linux/launch-light.png) | ![数据清理](../docs/linux/data-wipe.png) | ![系统诊断](../docs/linux/system-diagnostics.png) |
+| ![启动页](../docs/linux/launch-light.png) | ![游戏下载](../docs/linux/download.png) | ![深色](../docs/linux/launch-dark.png) |
 
-深色主题、2x HiDPI 与桌面集成页面截图见 [`docs/linux/`](../docs/linux)。
+| 版本选择 | 个性化 | 数据清理 | 系统诊断 |
+| --- | --- | --- | --- |
+| ![版本选择](../docs/linux/instances.png) | ![个性化](../docs/linux/appearance.png) | ![数据清理](../docs/linux/data-wipe.png) | ![系统诊断](../docs/linux/system-diagnostics.png) |
+
+更多截图（2x HiDPI、桌面集成、资源下载）见 [`docs/linux/`](../docs/linux)。
 
 ## 运行（AppImage）
 
@@ -144,6 +166,7 @@ APPIMAGE_EXTRACT_AND_RUN=1 ./PCL-CE-Linux-1.0.0-x86_64.AppImage
 
 ## 已知限制
 
+- **窗口装饰：** 默认使用原版自绘标题栏以保持外观一致；如桌面环境需要使用系统标题栏/边框，可在“设置 → 个性化 → 窗口与标题栏”开启，或用 `UseSystemTitlebar` 配置项。
 - **Wayland：** Avalonia 11.3 没有原生 Wayland 后端，因此 Wayland 会话通过 XWayland（X11 协议）运行。好处是输入法候选窗、弹窗与窗口定位使用真实 X11 坐标，不会出现 Wayland 下常见的候选框错位；代价是需要系统启用 XWayland。没有 XWayland 时程序会给出中文提示并退出（退出码 2），不会崩溃。
 - **基础系统库不打包：** glibc、`libX11` / `libxcb`、Fontconfig、Mesa / GPU 驱动、可选的 GTK3 与 DBus 均由系统提供。AppImage 只保证 .NET 运行时、中文字体与图标主题自包含。
 - **glibc 版本：** 构建于较新的发行版，运行时要求 glibc ≥ 2.27（Ubuntu 20.04 / Debian 10 或更新），AppImage 内核心原生库最高使用 `GLIBC_2.27` 符号；更旧的发行版请在对应系统上执行 `scripts/build-appimage.sh` 重新构建。包内附带但 Linux 版当前未启用的可选组件（`libe_sqlite3.so` SQLite 缓存、`libdtls_native.so` DTLS DNS）在启用时分别需要 glibc 2.34 / 2.38。

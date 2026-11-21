@@ -1,10 +1,10 @@
 # PCL-CE-Linux 1.0.0 验证记录
 
-发布产物：`PCL-CE-Linux-1.0.0-x86_64.AppImage`，72,514,040 字节（69.2 MiB），
-SHA256 `b3757f4e8671b6fa1afb40b85e5b4873ccd97abe555b23d392e5225ca833baf9`。
+发布产物：`PCL-CE-Linux-1.0.0-x86_64.AppImage`，72,550,904 字节（69.2 MiB），
+SHA256 `fb0df446284a6be401898942c118175d852986c7d4e5149d82707372a5719dee`。
 GitHub Release：<https://github.com/qfys521/PCL-CE/releases/tag/v1.0.0-linux>
 界面截图：`docs/linux/`（启动页浅色/深色/2x、数据清理、系统诊断、桌面集成）。
-二进制构建自源码提交 `79b7db23`（其后仅有文档与截图提交，不影响二进制；构建脚本从无 `.git` 的导出副本构建，故包内 BUILD-INFO 的 Source 显示为导出副本）。
+二进制构建自源码提交（Linux UI 重建后的 `pcl-ce-linux` 分支 HEAD）（其后仅有文档与截图提交，不影响二进制；构建脚本从无 `.git` 的导出副本构建，故包内 BUILD-INFO 的 Source 显示为导出副本）。
 
 本文件记录 1.0.0 AppImage 的构建与验证环境、命令和结果。验证日期为 2026-11-22，构建机为 Ubuntu 26.10（glibc 2.41，16 核），运行会话为 GNOME Wayland + XWayland、NVIDIA RTX 4060 Laptop。
 
@@ -29,7 +29,10 @@ GitHub Release：<https://github.com/qfys521/PCL-CE/releases/tag/v1.0.0-linux>
 
 | 场景 | 结果 |
 | --- | --- |
-| 界面冒烟测试 | `--smoke-test`：16 个页面、切页动画中断、弹窗、动画开关全部通过（FUSE 挂载与 `APPIMAGE_EXTRACT_AND_RUN=1` 两种方式） |
+| 界面冒烟测试 | `--smoke-test`：17 个页面、切页动画、弹窗、动画开关全部通过（FUSE 挂载与 `APPIMAGE_EXTRACT_AND_RUN=1` 两种方式） |
+| 界面还原 | 按原版 WPF 界面重建：900×550 窗口 / 48 标题栏 / PCL Logo + CE 徽标 / 4 个胶囊标签 / 300 与 152 左侧栏 / 卡片与 42 像素列表 / PCL English + lucide 图标 / OKLCH 配色（猫蓝等 4 套）/ 彩色背景；浅色、深色、2x HiDPI 截图见 `docs/linux/` |
+| 个性化 | 主题模式、主题色、彩色背景、界面字体、标题栏 Logo（默认/文本/无）、系统窗口装饰切换，应用后即时生效 |
+| 首次启动稳定性 | 在 AppImage 内预置并预热 fontconfig 缓存（AppRun 使用稳定的用户级字体目录，程序启动时全局预加载 Skia 自带 HarfBuzz），空 HOME 首次启动连续 3 次、`APPIMAGE_EXTRACT_AND_RUN=1` 均通过，不再出现 `free(): invalid pointer` |
 | 界面截图 | `--screenshot`：浅色 / 深色 / 2x 及 下载、设置、桌面集成、清理数据、系统信息、关于 页面；中文无豆腐块 |
 | Minecraft 1.21.1 原版 | 安装 3948 个文件并 SHA-1 校验；启动 25 秒，LWJGL/OpenGL、纹理图集与渲染线程正常 |
 | Fabric 0.20.1 / 1.21.1 | 加载器安装并启动成功（日志：`Loading Minecraft 1.21.1 with Fabric Loader 0.20.1`） |

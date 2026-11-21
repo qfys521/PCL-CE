@@ -19,25 +19,6 @@ internal sealed partial class MainWindow : Window
 {
     private readonly LinuxSettings _settings;
     private readonly HttpClient _client = LinuxHttpClientFactory.Create();
-    private readonly TextBox _directory = new();
-    private readonly TextBox _java = new();
-    private readonly TextBox _name = new();
-    private readonly TextBox _clientId = new() { Watermark = "Microsoft OAuth Client ID" };
-    private readonly CheckBox _microsoft = new() { Content = "Microsoft 账号" };
-    private readonly NumericUpDown _memory = new() { Minimum = 512, Maximum = 131072, Increment = 512, FormatString = "0" };
-    private readonly ComboBox _installed = new() { HorizontalAlignment = HorizontalAlignment.Stretch, PlaceholderText = "选择版本" };
-    private readonly ComboBox _releases = new() { HorizontalAlignment = HorizontalAlignment.Stretch, PlaceholderText = "选择 Minecraft 版本" };
-    private readonly TextBox _log = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 180 };
-    private readonly TextBlock _status = new() { Text = "就绪", TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _account = new() { TextWrapping = TextWrapping.Wrap };
-    private readonly Button _cancel = new() { Content = "取消", IsVisible = false };
-    private readonly Grid _form = new();
-    private CancellationTokenSource? _operation;
-    private CancellationTokenSource? _gameOperation;
-    private bool _closeAfterGame;
-    private readonly bool _smoke;
-    private readonly string? _screenshotDirectory;
-
     public MainWindow(bool smoke, string? screenshotDirectory = null)
     {
         _smoke = smoke;
@@ -54,7 +35,7 @@ internal sealed partial class MainWindow : Window
         Width = _settings.WindowWidth is >= 850 and <= 10000 ? _settings.WindowWidth : 1000;
         Height = _settings.WindowHeight is >= 500 and <= 10000 ? _settings.WindowHeight : 640;
         InitializeLayout();
-        RefreshAccount();
+        RefreshAccountHeader();
         _installed.SelectionChanged += (_, _) => UpdateSelectedVersion();
         _cancel.Click += (_, _) => { if (_operation is not null) _operation.Cancel(); else _gameOperation?.Cancel(); };
         Closing += (_, e) =>
@@ -95,30 +76,12 @@ internal sealed partial class MainWindow : Window
 
     private LinuxGameLauncher GameLauncher => new(_directory.Text ?? _settings.GameDirectory, _client);
 
-    private Button Button(string label, Func<CancellationToken, Task> action)
-    {
-        var button = new Button { Content = label, VerticalAlignment = VerticalAlignment.Center };
-        button.Classes.Add("pcl");
-        button.Click += async (_, _) => await RunAsync(action);
-        return button;
-    }
-
-    private static Grid Row(string label, Control field, params Control[] actions)
-    {
-        var columns = "100,*" + string.Concat(actions.Select(_ => ",Auto"));
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions(columns), ColumnSpacing = 8 };
-        row.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
-        field.HorizontalAlignment = HorizontalAlignment.Stretch;
-        Grid.SetColumn(field, 1); row.Children.Add(field);
-        for (var i = 0; i < actions.Length; i++) { Grid.SetColumn(actions[i], i + 2); row.Children.Add(actions[i]); }
-        return row;
-    }
-
     private async Task RunAsync(Func<CancellationToken, Task> action)
     {
         if (_operation is not null) return;
         using var operation = new CancellationTokenSource();
         _operation = operation; _form.IsEnabled = false; _cancel.IsEnabled = true; _cancel.IsVisible = true; _activity.IsVisible = true;
+        _statusBar.IsVisible = true;
         try { await action(operation.Token); _status.Text = _gameOperation is not null ? "游戏正在运行" : "完成"; }
         catch (OperationCanceledException) { _status.Text = "已取消"; AppendLog("操作已取消。"); }
         catch (Exception ex)
@@ -130,6 +93,7 @@ internal sealed partial class MainWindow : Window
         finally
         {
             _operation = null; _form.IsEnabled = true; _activity.IsVisible = false;
+            if (_gameOperation is null) _statusBar.IsVisible = false;
             _cancel.IsEnabled = _gameOperation is not null; _cancel.IsVisible = _gameOperation is not null;
             _cancel.Content = _gameOperation is not null ? "停止游戏" : "取消";
         }
@@ -141,6 +105,8 @@ internal sealed partial class MainWindow : Window
         if (text.Length > 50000) text = text[^30000..];
         _log.Text = text + $"[{DateTime.Now:HH:mm:ss}] {message}\n";
         _log.CaretIndex = _log.Text.Length;
+        _logView.Text = _log.Text;
+        _logView.CaretIndex = _logView.Text?.Length ?? 0;
         AppLog.Info(message);
     }
 
@@ -177,6 +143,8 @@ internal sealed partial class MainWindow : Window
         var versions = GameLauncher.GetInstalledVersions();
         _installed.ItemsSource = versions;
         _installed.SelectedItem = selected is not null && versions.Contains(selected) ? selected : versions.FirstOrDefault();
+        _installedList.ItemsSource = versions;
+        _installedList.SelectedItem = _installed.SelectedItem;
         UpdateSelectedVersion();
     }
 
@@ -211,6 +179,9 @@ internal sealed partial class MainWindow : Window
             ? await GameLauncher.GetVersionsAsync(token) : await GameLauncher.GetReleasesAsync(token);
         _releases.ItemsSource = versions;
         _releases.SelectedIndex = 0;
+        _releaseList.ItemsSource = versions;
+        _releaseList.SelectedIndex = 0;
+        AppLog.Info($"[UI] 版本列表加载完成：{versions.Count} 个");
     }
 
     private async Task InstallAsync(CancellationToken token)
@@ -269,12 +240,8 @@ internal sealed partial class MainWindow : Window
             RefreshToken = result.RefreshToken, ExpiresAt = result.ExpiresAt,
             ProfileType = ProfileType.Microsoft, TokenType = result.TokenType
         };
-        RefreshAccount();
+        RefreshAccountHeader();
     }
-
-    private void RefreshAccount() => _account.Text = _authlib.IsChecked == true
-        ? _settings.AuthlibAccount is { } external ? $"第三方账号：{external.UserName}" : "请在账号设置中登录第三方账号"
-        : _settings.MicrosoftAccount is { } account ? $"Microsoft 账号：{account.UserName}" : "尚未登录 Microsoft 账号";
 
     private async Task LaunchAsync(CancellationToken token)
     {

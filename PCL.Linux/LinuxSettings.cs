@@ -31,6 +31,15 @@ public sealed class LinuxSettings
     public string BackgroundPath { get; set; } = "";
     public string AccentColor { get; set; } = "#147AD6";
     public string Theme { get; set; } = "system";
+    /// <summary>PCL 配色主题：CatBlue（默认猫蓝）/ SkyBlue（天蓝）/ DeathBlue（崩蓝）/ HmclBlue。</summary>
+    public string ThemeColor { get; set; } = "CatBlue";
+    /// <summary>标题栏 Logo 类型：0 无、1 PCL 手绘 Logo（默认）、2 文本、3 图片（未实现时回退默认）、4 HMCL。</summary>
+    public int TitleLogoType { get; set; } = 1;
+    public string TitleLogoText { get; set; } = "Point Cloud Library";
+    /// <summary>使用原版彩色渐变背景（关闭则为纯色背景）。</summary>
+    public bool ColorfulBackground { get; set; } = true;
+    /// <summary>使用系统窗口装饰而非原版自绘标题栏。</summary>
+    public bool UseSystemTitlebar { get; set; }
     public bool EnableAnimations { get; set; } = true;
     public string MachineId { get; set; } = Guid.NewGuid().ToString("N");
     public string RelayNodes { get; set; } = "tcp://public.easytier.top:11010;tcp://public2.easytier.cn:54321";
@@ -44,8 +53,8 @@ public sealed class LinuxSettings
     public string InterfaceFont { get; set; } = "";
     /// <summary>下载源：auto 表示官方优先、失败时回退到公开镜像。</summary>
     public string DownloadSource { get; set; } = "auto";
-    public double WindowWidth { get; set; } = 1000;
-    public double WindowHeight { get; set; } = 640;
+    public double WindowWidth { get; set; } = 900;
+    public double WindowHeight { get; set; } = 550;
     public int WindowX { get; set; } = int.MinValue;
     public int WindowY { get; set; } = int.MinValue;
     public bool WindowMaximized { get; set; }

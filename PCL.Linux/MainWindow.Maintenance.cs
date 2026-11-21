@@ -327,6 +327,6 @@ internal sealed partial class MainWindow
         _settings.UseAuthlibAccount = false;
         _microsoft.IsChecked = false;
         _authlib.IsChecked = false;
-        RefreshAccount();
+        RefreshAccountHeader();
     }
 }
