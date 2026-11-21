@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.pcl_community.PCL_CE</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+
+  <name>PCL-CE-Linux</name>
+  <name xml:lang="zh_CN">PCL-CE-Linux</name>
+  <summary>Native Linux Minecraft launcher</summary>
+  <summary xml:lang="zh_CN">Minecraft 启动器的 Linux 原生版本</summary>
+
+  <description>
+    <p>
+      PCL-CE-Linux is the native Linux port of the PCL-CE Minecraft launcher,
+      built with Avalonia and a portable launcher core. It manages vanilla,
+      snapshot and modded Minecraft installations, downloads and verifies game
+      files, handles Fabric/Forge/NeoForge/Quilt, Microsoft/Yggdrasil/offline
+      accounts, mods, modpacks and resource packs, and supports EasyTier based
+      LAN multiplayer.
+    </p>
+    <p>
+      The application is self-contained (.NET runtime bundled), needs no Mono
+      or Wine, ships Noto Sans CJK fonts and its icon theme, and follows the
+      XDG Base Directory specification for all user data.
+    </p>
+    <ul>
+      <li>Install and launch vanilla, snapshot and modded Minecraft versions.</li>
+      <li>Import and export Modrinth/CurseForge/MultiMC/HMCL modpacks.</li>
+      <li>Microsoft device-code login, third-party Yggdrasil and offline accounts.</li>
+      <li>Native EasyTier multiplayer rooms and LAN port forwarding.</li>
+    </ul>
+    <p xml:lang="zh_CN">
+      PCL-CE-Linux 是 PCL-CE Minecraft 启动器的 Linux 原生版本，使用 Avalonia 与
+      可移植启动核心。支持原版、快照与模组版本安装，客户端下载与文件校验，
+      Fabric/Forge/NeoForge/Quilt 加载器，微软 / 第三方 / 离线账号，模组、整合包与
+      资源包管理，以及基于 EasyTier 的原生联机。
+    </p>
+    <p xml:lang="zh_CN">
+      程序自带 .NET 运行时、Noto Sans CJK 中文字体与图标主题，无需安装 Mono 或 Wine，
+      所有用户数据遵循 XDG Base Directory 规范。
+    </p>
+  </description>
+
+  <launchable type="desktop-id">pcl-ce.desktop</launchable>
+
+  <url type="homepage">https://github.com/PCL-Community/PCL-CE</url>
+  <url type="bugtracker">https://github.com/PCL-Community/PCL-CE/issues</url>
+
+  <developer id="io.github.pcl_community">
+    <name>PCL Community</name>
+  </developer>
+
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>Minecraft</keyword>
+    <keyword>launcher</keyword>
+    <keyword>modpack</keyword>
+    <keyword>game</keyword>
+  </keywords>
+
+  <provides>
+    <binary>PCL-CE</binary>
+  </provides>
+
+  <icon type="stock">pcl-ce</icon>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="1.0.0" date="2026-11-22" type="stable">
+      <description>
+        <p>First stable PCL-CE-Linux release, distributed as a single self-contained AppImage.</p>
+        <p xml:lang="zh_CN">PCL-CE-Linux 首个稳定版本，以单一自包含 AppImage 形式发布。</p>
+      </description>
+    </release>
+  </releases>
+</component>

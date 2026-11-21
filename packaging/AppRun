@@ -1,0 +1,56 @@
+#!/bin/sh
+# PCL-CE-Linux AppRun — entry point executed by the AppImage runtime.
+#
+# The launcher is a self-contained .NET application: it needs no system .NET,
+# Mono or Wine.  This wrapper only makes the contents of the AppDir visible to
+# the process (bundled CJK font, hicolor icon theme, desktop/MIME metadata) and
+# then execs the real apphost.  It never writes inside $APPDIR: the AppImage is
+# mounted read-only.
+
+set -eu
+
+# --- locate the AppDir -----------------------------------------------------
+# APPIMAGE runtimes export $APPDIR; when the AppDir was extracted manually
+# ("--appimage-extract", no-FUSE fallback) derive it from the script location.
+if [ -z "${APPDIR:-}" ]; then
+    _self="$0"
+    while [ -L "$_self" ]; do
+        _target=$(readlink "$_self")
+        case "$_target" in
+            /*) _self="$_target" ;;
+            *)  _self="$(dirname "$_self")/$_target" ;;
+        esac
+    done
+    APPDIR=$(CDPATH= cd -- "$(dirname -- "$_self")" && pwd)
+    export APPDIR
+fi
+
+# --- bundled fonts ---------------------------------------------------------
+# Noto Sans CJK SC (Regular/Bold) is shipped inside the AppImage so Chinese
+# text renders even on hosts without any CJK font installed.  Fontconfig also
+# scans the host font directories; its cache is redirected to
+# $XDG_CACHE_HOME/pcl-ce/fontconfig by the bundled fonts.conf.
+if [ -f "$APPDIR/usr/etc/fonts/fonts.conf" ]; then
+    export FONTCONFIG_FILE="$APPDIR/usr/etc/fonts/fonts.conf"
+fi
+
+# --- bundled icon theme / desktop metadata --------------------------------
+# The AppImage ships hicolor icons (16..512 px), its .desktop file and the MIME
+# definitions.  Prepending usr/share lets GTK/Qt/X11 integrations find them
+# without installing anything on the host.
+if [ -n "${XDG_DATA_DIRS:-}" ]; then
+    export XDG_DATA_DIRS="$APPDIR/usr/share:$XDG_DATA_DIRS"
+else
+    export XDG_DATA_DIRS="$APPDIR/usr/share:/usr/local/share:/usr/share"
+fi
+
+# Make the launcher available under its desktop Exec name (usr/bin/PCL-CE).
+if [ -n "${PATH:-}" ]; then
+    export PATH="$APPDIR/usr/bin:$PATH"
+else
+    export PATH="$APPDIR/usr/bin:/usr/local/bin:/usr/bin:/bin"
+fi
+
+# The apphost and its entire runtime live in the same directory
+# (usr/lib/pcl-ce), so it resolves PCL-CE.dll and native libraries by itself.
+exec "$APPDIR/usr/lib/pcl-ce/PCL-CE" "$@"

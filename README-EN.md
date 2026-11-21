@@ -41,7 +41,7 @@ Everyone is welcome to try it out!
 | Windows 10 1809 (17763) or later | ✅ Fully supported | [.NET 10 Desktop Runtime](http://get.dot.net/10) |
 | Windows 8 to Windows 10 1809 (17763) | ⚠️ Expected to run; community support offered at discretion | [.NET 10 Desktop Runtime](http://get.dot.net/10) |
 | Windows 7 or earlier | ❌ Not supported | N/A |
-| Linux x86_64 | 🧪 [Native preview](PCL.Linux/README.md), limited features | Bundled .NET; OpenJDK required for Minecraft |
+| Linux x86_64 | ✅ [PCL-CE-Linux 1.0.0](PCL.Linux/README.md) (single-file AppImage) | No .NET/Mono required; glibc, X11/XWayland and a GPU driver |
 | macOS / Other OS | ⚠️ Cross-platform development only (cross-compilation) | [.NET 11 SDK](http://get.dot.net/11) |
 
 **✅ Fully supported**: We will provide as much support as possible, but you must ensure you are using the latest version of the launcher.
@@ -52,7 +52,14 @@ Everyone is welcome to try it out!
 
 **⚠️ Cross-platform development only (cross-compilation)**: PCL CE’s source code can be built on macOS and Linux, but it cannot run directly. As a developer, you can develop on these platforms and then move the build artifacts to Windows for testing.
 
-**🧪 Native Linux preview**: The Avalonia frontend follows the Windows layout and supports vanilla and loader installation, isolated instances, mods, modpacks, custom homepages, crash analysis, and Scaffolding multiplayer. See the [Linux guide](PCL.Linux/README.md) for supported features and validation. The cross-compilation limitation above applies to the original WPF interface.
+**🐧 Native Linux edition (PCL-CE-Linux)**: a native Avalonia implementation for Linux desktops, with system window decorations, XDG Desktop Portal file dialogs, freedesktop notifications and desktop integration. It ships as one AppImage that bundles the .NET runtime and CJK fonts — no .NET, Mono or Wine installation is required. It keeps vanilla and loader installation, isolated instances, mods and resource downloads, modpack import/export, Microsoft / third-party / offline login, Scaffolding multiplayer and crash analysis, and no longer restricts Minecraft downloads in mainland China. All persistent data follows the XDG Base Directory specification; the game directory defaults to `~/PCL-CE`.
+
+- Run: `chmod +x PCL-CE-Linux-1.0.0-x86_64.AppImage && ./PCL-CE-Linux-1.0.0-x86_64.AppImage`
+- Without FUSE: `APPIMAGE_EXTRACT_AND_RUN=1 ./PCL-CE-Linux-1.0.0-x86_64.AppImage` (or `--appimage-extract-and-run`)
+- On first start it installs the desktop entry, hicolor icons, `.mrpack` MIME associations and the `pcl-ce://` scheme handler as needed
+- Build: `DOTNET=.tools/dotnet/dotnet ./scripts/build-appimage.sh`
+- Details, requirements and known limitations: [PCL.Linux/README.md](PCL.Linux/README.md)
+
 
 **Note**:     
 The community only supports the latest version of the launcher.    

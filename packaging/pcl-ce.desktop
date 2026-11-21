@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=PCL-CE-Linux
+Name[zh_CN]=PCL-CE-Linux
+GenericName=Minecraft Launcher
+GenericName[zh_CN]=Minecraft 启动器
+Comment=Launch and manage Minecraft instances
+Comment[zh_CN]=启动与管理 Minecraft 游戏实例
+Exec=PCL-CE %U
+Icon=pcl-ce
+Terminal=false
+Categories=Game;Utility;
+StartupNotify=true
+StartupWMClass=PCL-CE
+Keywords=minecraft;launcher;game;modpack;
+Keywords[zh_CN]=我的世界;启动器;游戏;整合包;
+MimeType=application/x-mrpack;application/x-minecraft-package;x-scheme-handler/pcl-ce;

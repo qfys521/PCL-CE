@@ -41,7 +41,7 @@ PCL CE 是基於 PCL 開放原始碼二次開發的社群版本，包括了主�
 | Windows 10 1809 (17763) 或更高 | ✅ 完整支援 | [.NET 10 Desktop Runtime](https://get.dot.net/10) |
 | Windows 8 - Windows 10 1809 (17763) | ⚠️ 理論能跑，酌情提供社群支援 | [.NET 10 Desktop Runtime](https://get.dot.net/10) |
 | Windows 7 或更低版本 | ❌ 不支援 | / |
-| Linux x86_64 | 🧪 [原生預覽版](PCL.Linux/README.md)，功能有限 | 發布包內含 .NET；遊戲需要 OpenJDK |
+| Linux x86_64 | ✅ [PCL-CE-Linux 1.0.0](PCL.Linux/README.md)（單一 AppImage） | 無需 .NET/Mono；需 glibc、X11/XWayland 與顯示卡驅動 |
 | macOS / 其他作業系統 | ⚠️ 僅跨平台開發支援（交叉編譯）| [.NET 11 SDK](https://get.dot.net/11) |
 
 **✅ 完整支援**：盡可能提供一切相關支援，但必須確保啟動器為最新版本。
@@ -52,7 +52,14 @@ PCL CE 是基於 PCL 開放原始碼二次開發的社群版本，包括了主�
 
 **⚠️ 僅跨平台開發支援（交叉編譯）**：PCL CE 的原始碼可以在 macOS 與 Linux 平台編譯，但無法直接執行。作為開發者，你可以在這些平台上進行開發，然後將編譯產物轉移到 Windows 系統測試。
 
-**🧪 Linux 原生預覽版**：以 Avalonia 移植 Windows 版配置，支援原版與載入器安裝、隔離實例、模組和整合包、自訂主頁、崩潰分析與 Scaffolding 連線。功能及驗證範圍見 [Linux 說明](PCL.Linux/README.md)。上述交叉編譯限制適用於原有 WPF 介面。
+**🐧 Linux 原生版（PCL-CE-Linux）**：以 Avalonia 原生實作的 Linux 版本，視窗裝飾、檔案選擇器、系統通知與桌面整合依 Linux 桌面規範調整。發佈為單一 AppImage，內建 .NET 執行環境與中文字型，無需安裝 .NET、Mono 或 Wine。保留原版與載入器安裝、隔離實例、模組與資源下載、整合包匯入匯出、Microsoft / 第三方 / 離線登入、Scaffolding 連線、崩潰分析等功能，且不再限制中國大陸地區的 Minecraft 下載。所有持久化資料遵循 XDG Base Directory 規範，遊戲目錄預設為 `~/PCL-CE`。
+
+- 執行：`chmod +x PCL-CE-Linux-1.0.0-x86_64.AppImage && ./PCL-CE-Linux-1.0.0-x86_64.AppImage`
+- 無 FUSE 環境：`APPIMAGE_EXTRACT_AND_RUN=1 ./PCL-CE-Linux-1.0.0-x86_64.AppImage`（或 `--appimage-extract-and-run`）
+- 首次啟動會視需要註冊桌面項目、hicolor 圖示、`.mrpack` 等 MIME 關聯與 `pcl-ce://` 協議
+- 建置：`DOTNET=.tools/dotnet/dotnet ./scripts/build-appimage.sh`
+- 詳細說明、相依需求與已知限制：[PCL.Linux/README.md](PCL.Linux/README.md)
+
 
 **注**：
 社群僅對最新版本的啟動器提供支援。

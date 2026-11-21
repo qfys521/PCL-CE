@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-mrpack">
+    <comment>Modrinth modpack</comment>
+    <comment xml:lang="zh_CN">Modrinth 整合包</comment>
+    <glob pattern="*.mrpack"/>
+    <icon name="pcl-ce"/>
+    <generic-icon name="package-x-generic"/>
+  </mime-type>
+  <mime-type type="application/x-minecraft-package">
+    <comment>Minecraft content package</comment>
+    <comment xml:lang="zh_CN">Minecraft 内容包</comment>
+    <glob pattern="*.mcworld"/>
+    <glob pattern="*.mcpack"/>
+    <glob pattern="*.mctemplate"/>
+    <glob pattern="*.mcaddon"/>
+    <icon name="pcl-ce"/>
+    <generic-icon name="package-x-generic"/>
+  </mime-type>
+</mime-info>
