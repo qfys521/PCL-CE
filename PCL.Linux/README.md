@@ -142,6 +142,7 @@ APPIMAGE_EXTRACT_AND_RUN=1 ./PCL-CE-Linux-1.0.0-x86_64.AppImage
 - **无 FUSE 时**必须使用 `APPIMAGE_EXTRACT_AND_RUN=1` 或 `--appimage-extract-and-run`（首次启动会多花 1–2 秒解压）。
 - 移动 AppImage 文件后需要重新执行 `--register-desktop`，否则桌面入口仍指向旧路径。
 - 字体子集不包含全部 Unicode 字符；缺失的罕见字符回退到系统字体（若系统也没有则显示豆腐块）。
+- 与所有 Minecraft 启动器一样，登录令牌会作为 JVM 参数传给游戏进程，因此在本机 `/proc/<pid>/cmdline` 中可见；启动器只在日志中做了脱敏。多用户机器请限制其他用户读取进程信息。
 - 内置 Adwaita 图标子集只是 GTK 回退对话框的保险；Avalonia 11.3 本身不依赖 GTK 主题。
 
 ## 移植边界
